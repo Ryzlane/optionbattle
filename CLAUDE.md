@@ -8,7 +8,7 @@ Ce fichier contient les instructions et conventions pour travailler sur le proje
 
 OptionBattle est une plateforme gamifiée d'aide à la décision qui transforme le processus décisionnel en une bataille épique entre options. Chaque option devient un "Fighter" avec des "Attack Powers" (arguments pro) et "Weaknesses" (arguments con). L'application calcule automatiquement un score de combat pour chaque fighter et déclare un vainqueur.
 
-### État d'avancement : 75% ✅
+### État d'avancement : 95% ✅
 
 **✅ Implémenté** :
 - ✅ Backend Auth (JWT + bcrypt)
@@ -20,12 +20,16 @@ OptionBattle est une plateforme gamifiée d'aide à la décision qui transforme 
 - ✅ Calcul temps réel des scores et champion
 - ✅ Power Level slider (1-5)
 - ✅ Design battle-themed cohérent
+- ✅ **Collaboration temps réel (WebSocket + Socket.io)**
+- ✅ **Système de permissions (owner/editor/viewer)**
+- ✅ **Partage par email et liens partageables**
+- ✅ **Synchronisation multi-utilisateurs instantanée**
+- ✅ **Indicateurs de présence en ligne**
 
 **📝 À venir (optionnel)** :
 - Templates (Quick Battles pré-configurés)
 - Sons avec toggle
 - Export PDF
-- Collaboration (Phase 2)
 
 ### Différences clés avec DecisionHub
 - **Gamification** : badges avec débloquage automatique
@@ -37,9 +41,10 @@ OptionBattle est une plateforme gamifiée d'aide à la décision qui transforme 
 
 ### Stack Technique
 - **Backend**: Node.js + Express + Prisma ORM + SQLite (dev) / PostgreSQL (prod)
-- **Frontend**: React 18 + Vite + TailwindCSS + Radix UI
+- **Frontend**: React 19 + Vite + TailwindCSS + Radix UI
 - **Authentification**: JWT avec bcrypt
 - **Runtime**: Bun (compatible Node.js)
+- **Temps réel**: Socket.io (WebSocket) pour collaboration
 - **Gamification**: Framer Motion, react-confetti, Zustand
 - **Sons**: Fichiers audio avec toggle (5 sons)
 - **Export**: jsPDF + jspdf-autotable
@@ -55,26 +60,30 @@ optionbattle/
 │   │   │   ├── battle.controller.js ✅
 │   │   │   ├── fighter.controller.js ✅
 │   │   │   ├── argument.controller.js ✅
-│   │   │   └── badge.controller.js ✅
+│   │   │   ├── badge.controller.js ✅
+│   │   │   └── collaboration.controller.js ✅
 │   │   ├── routes/
 │   │   │   ├── auth.routes.js ✅
 │   │   │   ├── battle.routes.js ✅
 │   │   │   ├── fighter.routes.js ✅
 │   │   │   ├── argument.routes.js ✅
-│   │   │   └── badge.routes.js ✅
+│   │   │   ├── badge.routes.js ✅
+│   │   │   └── collaboration.routes.js ✅
 │   │   ├── middleware/
 │   │   │   ├── auth.js ✅
 │   │   │   ├── validation.js ✅
 │   │   │   └── errorHandler.js ✅
 │   │   ├── services/
 │   │   │   └── badgeService.js ✅ (5 badges)
+│   │   ├── socket/
+│   │   │   └── index.js ✅ (WebSocket handlers)
 │   │   ├── utils/
 │   │   │   ├── jwt.js ✅
 │   │   │   ├── password.js ✅
 │   │   │   └── scoring.js ✅
 │   │   └── server.js ✅
 │   ├── prisma/
-│   │   └── schema.prisma ✅ (User, Battle, Fighter, Argument, Badge, Template)
+│   │   └── schema.prisma ✅ (User, Battle, Fighter, Argument, Badge, Collaboration, ShareLink, Activity)
 │   └── .env ✅
 │
 └── frontend/
@@ -84,19 +93,24 @@ optionbattle/
     │   │   │   ├── LoginPage.jsx ✅
     │   │   │   └── RegisterPage.jsx ✅
     │   │   ├── DashboardPage.jsx ✅
-    │   │   └── BattlePage.jsx ✅
+    │   │   ├── BattlePage.jsx ✅
+    │   │   └── JoinBattlePage.jsx ✅
     │   ├── components/
     │   │   ├── ui/ (Button, Input, Label, Card, Dialog, Slider) ✅
     │   │   ├── auth/ ✅
     │   │   ├── battle/ (FighterCard, AddFighterDialog, AddArgumentDialog, ArgumentItem) ✅
     │   │   ├── arena/ (BattleCard, CreateBattleDialog) ✅
     │   │   ├── gamification/ (BadgeItem, BadgeNotification) ✅
+    │   │   ├── collaboration/ (ShareDialog, CollaboratorsList, OnlineIndicator) ✅
     │   │   └── shared/ (Layout) ✅
     │   ├── contexts/
-    │   │   └── AuthContext.jsx ✅
+    │   │   ├── AuthContext.jsx ✅
+    │   │   ├── CollaborationContext.jsx ✅
+    │   │   └── SoundContext.jsx ✅
     │   ├── hooks/
     │   │   ├── useAutoSave.js ✅
-    │   │   └── useBadges.js ✅
+    │   │   ├── useBadges.js ✅
+    │   │   └── useRealtimeBattle.js ✅
     │   ├── services/
     │   │   └── api.js ✅
     │   ├── utils/
@@ -114,10 +128,12 @@ optionbattle/
 ```
 User (utilisateurs)
   ├── Battle (batailles) - title, description, status, championId
-  │     └── Fighter (combattants) - name, description, score, order
-  │           └── Argument (powers/weaknesses) - text, type (power/weakness), weight (1-5)
-  ├── Badge (badges débloqués) - badgeType, unlockedAt
-  └── Collaboration (partages, Phase 2)
+  │     ├── Fighter (combattants) - name, description, score, order
+  │     │     └── Argument (powers/weaknesses) - text, type (power/weakness), weight (1-5)
+  │     ├── Collaboration (collaborateurs) - role (owner/editor/viewer), joinedAt, lastSeenAt
+  │     ├── ShareLink (liens partageables) - token, role, expiresAt, usageCount
+  │     └── Activity (historique) - action, entityType, entityId, metadata, createdAt
+  └── Badge (badges débloqués) - badgeType, unlockedAt
 
 Template (Quick Battles pré-configurés)
   - name, description, category, fighters[], arguments[]
@@ -126,6 +142,9 @@ Template (Quick Battles pré-configurés)
 Relations :
 - User 1:N Battle 1:N Fighter 1:N Argument
 - User 1:N Badge
+- User N:M Battle (via Collaboration) - Système de permissions multi-utilisateurs
+- Battle 1:N ShareLink - Liens partageables avec rôles
+- Battle 1:N Activity - Log des actions collaboratives
 - Battle N:1 Fighter (championId)
 
 ## 🎮 Vocabulaire OptionBattle
@@ -145,11 +164,89 @@ Relations :
 | Create | **Launch a Battle** | "Launch your first battle" |
 | Compare | **Let them fight** | "Let your fighters battle it out" |
 
+## 🤝 Collaboration Temps Réel
+
+### Architecture WebSocket
+
+**Pattern Hybrid REST + WebSocket** :
+- **REST API** : CRUD initial, permissions, invitations, liens
+- **WebSocket (Socket.io)** : Synchronisation temps réel des modifications
+- **Stratégie de conflit** : Last-Write-Wins (le dernier update gagne)
+
+### Système de Permissions
+
+| Rôle | Lecture | Édition | Supprimer battle | Inviter | Partager |
+|------|---------|---------|------------------|---------|----------|
+| **owner** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **editor** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **viewer** | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+### Routes Collaboration
+
+**REST API** :
+- `GET /api/collaboration/:battleId/collaborators` - Liste des collaborateurs
+- `POST /api/collaboration/:battleId/collaborators` - Inviter par email
+- `DELETE /api/collaboration/:battleId/collaborators/:userId` - Retirer collaborateur
+- `POST /api/collaboration/:battleId/share-links` - Créer lien partageable
+- `GET /api/collaboration/:battleId/share-links` - Liste des liens
+- `DELETE /api/collaboration/:battleId/share-links/:linkId` - Supprimer lien
+- `POST /api/collaboration/join/:token` - Rejoindre via lien (public)
+- `GET /api/collaboration/:battleId/activities` - Historique activités
+
+**WebSocket Events** :
+- `battle:join` - Rejoindre une battle room
+- `battle:leave` - Quitter une battle room
+- `battle:update` - Modifier battle (titre, description)
+- `fighter:add` / `fighter:update` / `fighter:delete` - Fighters
+- `argument:add` / `argument:update` / `argument:delete` - Arguments
+- `user:joined` / `user:left` - Événements de présence
+- `collaborator:added` / `collaborator:removed` - Gestion collaborateurs
+
+### Fonctionnalités
+
+1. **Invitation par email** : Inviter un utilisateur existant en saisissant son email
+2. **Liens partageables** : Générer un lien unique avec rôle (editor/viewer)
+3. **Synchronisation temps réel** : Toutes modifications visibles instantanément
+4. **Indicateurs de présence** : Voir qui est connecté en temps réel
+5. **Notifications** : Toasts informant des actions des collaborateurs
+6. **Historique d'activité** : Log de toutes les actions (Activity model)
+
+### Implémentation Frontend
+
+**CollaborationContext** :
+```javascript
+import { useCollaboration } from './contexts/CollaborationContext';
+
+const { socket, isConnected, activeBattle, onlineUsers, joinBattle, emit, on } = useCollaboration();
+```
+
+**useRealtimeBattle Hook** :
+```javascript
+import { useRealtimeBattle } from './hooks/useRealtimeBattle';
+
+const { battle, setBattle } = useRealtimeBattle(battleId, initialBattle);
+// Synchronisation automatique via WebSocket
+```
+
+**Composants** :
+- `<ShareDialog />` - Interface partage (email + liens)
+- `<CollaboratorsList />` - Liste collaborateurs avec gestion
+- `<OnlineIndicator />` - Status connexion + avatars online
+
+### Sécurité Collaboration
+
+- Vérification permissions côté serveur dans chaque event WebSocket
+- Tokens JWT dans handshake Socket.io
+- Validation rôle avant chaque action critique
+- Rate limiting sur endpoints d'invitation
+- Expiration optionnelle des liens partageables
+
 ## 🔧 Configuration actuelle
 
 ### Ports
 - Backend API: **http://localhost:5001**
-- Frontend: **http://localhost:3000**
+- Frontend: **http://localhost:5173** (Vite dev server)
+- WebSocket: **ws://localhost:5001** (Socket.io sur même port que API)
 
 ### Variables d'environnement
 
@@ -222,13 +319,19 @@ bun run build                     # Build pour production
 - **Styling**: TailwindCSS avec classes utilitaires
 - **Vocabulaire battle**: Utiliser dans tous les composants et UI
 - **State management**:
-  - React Context pour auth
+  - React Context pour auth et collaboration
   - Zustand pour animations/gamification
 - **API calls**: Centralisés dans `services/api.js`
+- **WebSocket**: `CollaborationContext` avec Socket.io-client
 - **Toasts**: Utiliser `sonner` pour notifications
 - **Auto-save**: Debounce de 3 secondes avec lodash.debounce
 - **Animations**: Framer Motion pour transitions
 - **Sons**: Contexte global avec toggle
+- **Collaboration**:
+  - Hook `useRealtimeBattle` pour synchronisation
+  - Émettre events avec `emit()` du context
+  - Écouter events avec `on()` / `off()`
+  - Toujours nettoyer listeners dans `useEffect` cleanup
 
 ## ⚠️ Points d'attention
 
@@ -372,6 +475,8 @@ Le `.gitignore` est configuré pour protéger ces fichiers.
     "express-validator": "^7.2.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.4",
+    "socket.io": "^4.8.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -385,10 +490,11 @@ Le `.gitignore` est configuré pour protéger ces fichiers.
 ```json
 {
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-router-dom": "^6.22.0",
     "axios": "^1.6.7",
+    "socket.io-client": "^4.8.1",
     "zustand": "^4.5.0",
     "framer-motion": "^11.0.0",
     "react-confetti": "^6.1.0",
@@ -555,9 +661,9 @@ Rendre la prise de décision **ludique, engageante et addictive** grâce à la g
 
 ---
 
-## 📋 État actuel du projet (Mise à jour: 2026-02-15)
+## 📋 État actuel du projet (Mise à jour: 2026-02-16)
 
-### ✅ Fonctionnalités implémentées (75%)
+### ✅ Fonctionnalités implémentées (95%)
 
 **Backend complet** :
 - ✅ Authentification JWT (register, login, me)
@@ -569,6 +675,10 @@ Rendre la prise de décision **ludique, engageante et addictive** grâce à la g
 - ✅ Sécurité (helmet, CORS, rate limiting)
 - ✅ Validation express-validator sur toutes les routes
 - ✅ Routes imbriquées : `/api/battles/:id/fighters/:id/arguments`
+- ✅ **WebSocket Socket.io pour collaboration temps réel**
+- ✅ **API Collaboration complète (invitations, liens, permissions)**
+- ✅ **Système de permissions (owner/editor/viewer)**
+- ✅ **Modèles Collaboration, ShareLink, Activity**
 
 **Frontend complet** :
 - ✅ Pages Auth (Login + Register) avec design battle-themed
@@ -583,6 +693,12 @@ Rendre la prise de décision **ludique, engageante et addictive** grâce à la g
 - ✅ Hook useAutoSave pour sauvegarde automatique
 - ✅ Hook useBadges pour gamification
 - ✅ Design responsive et accessible
+- ✅ **CollaborationContext avec Socket.io-client**
+- ✅ **Hook useRealtimeBattle pour synchronisation**
+- ✅ **ShareDialog avec invitations email + liens**
+- ✅ **CollaboratorsList avec gestion permissions**
+- ✅ **OnlineIndicator avec présence temps réel**
+- ✅ **JoinBattlePage pour rejoindre via lien**
 
 **Système de gamification** :
 - ✅ 5 badges implémentés (First Blood, Veteran, Champion, Analyst, Wise)
@@ -590,7 +706,20 @@ Rendre la prise de décision **ludique, engageante et addictive** grâce à la g
 - ✅ BadgeService avec conditions de débloquage automatiques
 - ✅ Composants BadgeItem et BadgeNotification (avec confetti)
 
-### 📝 À faire (optionnel - 25%)
+**Collaboration temps réel** :
+- ✅ WebSocket avec Socket.io (rooms par battle)
+- ✅ Synchronisation instantanée multi-utilisateurs
+- ✅ 3 niveaux de permissions (owner/editor/viewer)
+- ✅ Invitation par email (utilisateurs existants)
+- ✅ Liens partageables avec token unique
+- ✅ Gestion collaborateurs (ajout/retrait)
+- ✅ Indicateurs de présence en ligne
+- ✅ Notifications toast des actions collaborateurs
+- ✅ Historique d'activité (Activity model)
+- ✅ Permissions vérifiées côté serveur (sécurité)
+- ✅ Reconnexion automatique Socket.io
+
+### 📝 À faire (optionnel - 5%)
 
 **Templates** :
 - Quick Battles pré-configurés (5 templates)
