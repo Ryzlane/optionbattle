@@ -11,6 +11,8 @@ import battleRoutes from './routes/battle.routes.js';
 import badgeRoutes from './routes/badge.routes.js';
 import templateRoutes from './routes/template.routes.js';
 import collaborationRoutes from './routes/collaboration.routes.js';
+import arenaRoutes from './routes/arena.routes.js';
+import arenaCollaborationRoutes from './routes/arenaCollaboration.routes.js';
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -81,6 +83,12 @@ app.use('/api/templates', templateRoutes);
 
 // Collaboration routes (protégées)
 app.use('/api/collaboration', collaborationRoutes);
+
+// Arena routes (protégées)
+app.use('/api/arenas', arenaRoutes);
+
+// Arena collaboration routes (protégées sauf join/:token)
+app.use('/api/arena-collaboration', arenaCollaborationRoutes);
 
 // Route 404
 app.use('*', (req, res) => {

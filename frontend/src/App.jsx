@@ -5,6 +5,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import BattlePage from './pages/BattlePage';
 import JoinBattlePage from './pages/JoinBattlePage';
+import ArenaPage from './pages/ArenaPage';
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -79,6 +80,14 @@ function App() {
         element={
           <ProtectedRoute>
             <JoinBattlePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/arenas/:id"
+        element={
+          <ProtectedRoute>
+            <ArenaPage />
           </ProtectedRoute>
         }
       />

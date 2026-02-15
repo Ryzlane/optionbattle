@@ -3,6 +3,7 @@ import { Swords, LogOut, Trophy, Zap, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSound } from '../../contexts/SoundContext';
 import { Button } from '../ui/Button';
+import Sidebar from './Sidebar';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -87,10 +88,13 @@ export default function Layout({ children }) {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      {/* Main content with Sidebar */}
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

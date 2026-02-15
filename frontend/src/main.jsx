@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { CollaborationProvider } from './contexts/CollaborationContext.jsx';
+import { ArenaProvider } from './contexts/ArenaContext.jsx';
 import { SoundProvider } from './contexts/SoundContext.jsx';
 import { Toaster } from 'sonner';
 import './index.css';
@@ -13,10 +14,12 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <CollaborationProvider>
-          <SoundProvider>
-            <App />
-            <Toaster position="top-right" richColors />
-          </SoundProvider>
+          <ArenaProvider>
+            <SoundProvider>
+              <App />
+              <Toaster position="top-right" richColors />
+            </SoundProvider>
+          </ArenaProvider>
         </CollaborationProvider>
       </AuthProvider>
     </BrowserRouter>

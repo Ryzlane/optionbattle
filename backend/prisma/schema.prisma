@@ -27,6 +27,13 @@ model User {
   shareLinks     ShareLink[]
   activities     Activity[]
 
+  // Arena relations
+  arenas                    Arena[]
+  arenaCollaborations       ArenaCollaboration[]
+  arenaInvitationsSent      ArenaCollaboration[]  @relation("ArenaInvitations")
+  arenaShareLinks           ArenaShareLink[]
+  arenaActivities           ArenaActivity[]
+
   @@map("users")
 }
 
@@ -38,11 +45,13 @@ model Battle {
   status      String   @default("draft") // draft, active, completed, archived
   championId  String?  // ID du fighter vainqueur
   userId      String
+  arenaId     String?  // Optional: belongs to an arena
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  arena    Arena?    @relation(fields: [arenaId], references: [id], onDelete: Cascade)
   fighters Fighter[]
   collaborations Collaboration[]
   shareLinks     ShareLink[]
@@ -50,6 +59,7 @@ model Battle {
 
   @@index([userId])
   @@index([status])
+  @@index([arenaId])
   @@map("battles")
 }
 
@@ -177,4 +187,88 @@ model Activity {
   @@index([battleId])
   @@index([userId])
   @@map("activities")
+}
+
+// Arena model - Workspace collaboratif
+model Arena {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("active") // active, archived
+  userId      String   // Owner
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  battles         Battle[]
+  collaborations  ArenaCollaboration[]
+  shareLinks      ArenaShareLink[]
+  activities      ArenaActivity[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("arenas")
+}
+
+// ArenaCollaboration model - Permissions au niveau arène
+model ArenaCollaboration {
+  id         String   @id @default(uuid())
+  arenaId    String
+  userId     String
+  role       String   @default("editor") // owner, editor, viewer
+  invitedBy  String?
+  joinedAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  // Relations
+  arena    Arena  @relation(fields: [arenaId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviter  User?  @relation("ArenaInvitations", fields: [invitedBy], references: [id])
+
+  @@unique([arenaId, userId])
+  @@index([arenaId])
+  @@index([userId])
+  @@map("arena_collaborations")
+}
+
+// ArenaShareLink model - Liens partageables pour arènes
+model ArenaShareLink {
+  id         String    @id @default(uuid())
+  arenaId    String
+  token      String    @unique
+  role       String    @default("viewer")
+  expiresAt  DateTime?
+  createdBy  String
+  createdAt  DateTime  @default(now())
+  usageCount Int       @default(0)
+  maxUsage   Int?
+
+  // Relations
+  arena   Arena @relation(fields: [arenaId], references: [id], onDelete: Cascade)
+  creator User  @relation(fields: [createdBy], references: [id])
+
+  @@index([token])
+  @@index([arenaId])
+  @@map("arena_share_links")
+}
+
+// ArenaActivity model - Log des actions dans l'arène
+model ArenaActivity {
+  id         String   @id @default(uuid())
+  arenaId    String
+  userId     String
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  arena Arena @relation(fields: [arenaId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([arenaId])
+  @@index([userId])
+  @@map("arena_activities")
 }

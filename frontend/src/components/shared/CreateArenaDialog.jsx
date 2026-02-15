@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Swords, Loader2 } from 'lucide-react';
-import api from '../../services/api';
+import { Users, Loader2, Plus } from 'lucide-react';
+import { useArena } from '../../contexts/ArenaContext';
 import { useSound } from '../../contexts/SoundContext';
 import {
   Dialog,
@@ -17,8 +17,9 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 
-export default function CreateBattleDialog({ arenaId, onBattleCreated }) {
+export default function CreateArenaDialog() {
   const navigate = useNavigate();
+  const { createArena } = useArena();
   const { playSuccess } = useSound();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,28 +40,21 @@ export default function CreateBattleDialog({ arenaId, onBattleCreated }) {
     setLoading(true);
 
     try {
-      const response = await api.post('/battles', {
+      const arena = await createArena({
         title: formData.title,
-        description: formData.description,
-        status: 'active',
-        arenaId: arenaId || undefined
+        description: formData.description
       });
 
       playSuccess();
-      toast.success('Battle créée avec succès ! Que le combat commence ⚔️');
+      toast.success('Arène créée avec succès !');
       setOpen(false);
       setFormData({ title: '', description: '' });
 
-      // Call callback with the new battle
-      if (onBattleCreated) {
-        onBattleCreated(response.data.data.battle);
-      }
-
-      // Naviguer vers la battle
-      navigate(`/battles/${response.data.data.battle.id}`);
+      // Navigate to the new arena
+      navigate(`/arenas/${arena.id}`);
     } catch (error) {
-      console.error('Erreur création battle:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la création de la battle');
+      console.error('Erreur création arène:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la création de l\'arène');
     } finally {
       setLoading(false);
     }
@@ -69,29 +63,29 @@ export default function CreateBattleDialog({ arenaId, onBattleCreated }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
-          <Swords className="w-5 h-5 mr-2" />
-          Lancer une Battle
+        <Button className="w-full" size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Créer une Arène
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Créer une nouvelle Battle</DialogTitle>
+            <DialogTitle>Créer une nouvelle Arène</DialogTitle>
             <DialogDescription>
-              Donnez un nom à votre battle et laissez vos options combattre pour trouver la meilleure.
+              Une arène permet de regrouper plusieurs battles et de collaborer avec d'autres utilisateurs.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">
-                Titre de la battle <span className="text-red-500">*</span>
+                Titre de l'arène <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="title"
                 name="title"
-                placeholder="Ex: iPhone vs Android"
+                placeholder="Ex: Projet X, Équipe Marketing, etc."
                 value={formData.title}
                 onChange={handleChange}
                 required
@@ -105,7 +99,7 @@ export default function CreateBattleDialog({ arenaId, onBattleCreated }) {
               <textarea
                 id="description"
                 name="description"
-                placeholder="Décrivez le contexte de votre décision..."
+                placeholder="Décrivez l'objectif de cette arène..."
                 value={formData.description}
                 onChange={handleChange}
                 disabled={loading}
@@ -135,8 +129,8 @@ export default function CreateBattleDialog({ arenaId, onBattleCreated }) {
                 </>
               ) : (
                 <>
-                  <Swords className="w-4 h-4 mr-2" />
-                  Créer la battle
+                  <Users className="w-4 h-4 mr-2" />
+                  Créer l'arène
                 </>
               )}
             </Button>

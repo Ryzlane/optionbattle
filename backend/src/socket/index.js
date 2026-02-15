@@ -376,10 +376,63 @@ export function setupSocketIO(httpServer) {
       }
     });
 
+    // === EVENT: Rejoindre une arène room ===
+    socket.on('arena:join', async ({ arenaId }) => {
+      try {
+        // Vérifier l'accès à l'arène
+        const access = await checkArenaAccess(socket.userId, arenaId);
+
+        if (!access) {
+          socket.emit('error', { message: 'Accès refusé à cette arène' });
+          return;
+        }
+
+        // Rejoindre la room
+        socket.join(`arena:${arenaId}`);
+        socket.currentArena = arenaId;
+
+        // Mettre à jour lastSeenAt si collaborateur
+        if (access.collaboration) {
+          await prisma.arenaCollaboration.update({
+            where: { id: access.collaboration.id },
+            data: { lastSeenAt: new Date() }
+          });
+        }
+
+        // Notifier les autres utilisateurs
+        socket.to(`arena:${arenaId}`).emit('user:joined:arena', {
+          user: socket.user,
+          role: access.role
+        });
+
+        console.log(`User ${socket.user.email} joined arena:${arenaId} as ${access.role}`);
+      } catch (error) {
+        console.error('Error joining arena:', error);
+        socket.emit('error', { message: 'Erreur lors de la connexion à l\'arène' });
+      }
+    });
+
+    // === EVENT: Quitter une arène room ===
+    socket.on('arena:leave', ({ arenaId }) => {
+      socket.leave(`arena:${arenaId}`);
+      socket.to(`arena:${arenaId}`).emit('user:left:arena', {
+        user: socket.user
+      });
+      if (socket.currentArena === arenaId) {
+        socket.currentArena = null;
+      }
+      console.log(`User ${socket.user.email} left arena:${arenaId}`);
+    });
+
     // === EVENT: Déconnexion ===
     socket.on('disconnect', () => {
       if (socket.currentBattle) {
         socket.to(socket.currentBattle).emit('user:left', {
+          user: socket.user
+        });
+      }
+      if (socket.currentArena) {
+        socket.to(socket.currentArena).emit('user:left:arena', {
           user: socket.user
         });
       }
@@ -448,5 +501,63 @@ async function logActivity(battleId, userId, action, entityType, entityId, metad
     });
   } catch (error) {
     console.error('Error logging activity:', error);
+  }
+}
+
+/**
+ * Vérifier l'accès d'un utilisateur à une arène
+ */
+async function checkArenaAccess(userId, arenaId, requiredRole = null) {
+  const arena = await prisma.arena.findUnique({
+    where: { id: arenaId }
+  });
+
+  if (!arena) return null;
+
+  // Owner a tous les droits
+  if (arena.userId === userId) {
+    return { role: 'owner', arena };
+  }
+
+  // Vérifier collaboration
+  const collaboration = await prisma.arenaCollaboration.findUnique({
+    where: {
+      arenaId_userId: {
+        arenaId,
+        userId
+      }
+    }
+  });
+
+  if (!collaboration) return null;
+
+  // Vérifier rôle requis
+  if (requiredRole) {
+    const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
+    if (roleHierarchy[collaboration.role] < roleHierarchy[requiredRole]) {
+      return null;
+    }
+  }
+
+  return { role: collaboration.role, collaboration };
+}
+
+/**
+ * Logger une activité d'arène dans la base de données
+ */
+async function logArenaActivity(arenaId, userId, action, entityType, entityId, metadata = null) {
+  try {
+    await prisma.arenaActivity.create({
+      data: {
+        arenaId,
+        userId,
+        action,
+        entityType,
+        entityId,
+        metadata: metadata ? JSON.stringify(metadata) : null
+      }
+    });
+  } catch (error) {
+    console.error('Error logging arena activity:', error);
   }
 }
