@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  battles Battle[]
+  badges  Badge[]
+  collaborations Collaboration[]
+  invitationsSent Collaboration[] @relation("Invitations")
+  shareLinks     ShareLink[]
+  activities     Activity[]
+
+  @@map("users")
+}
+
+// Battle model (ex-Decision)
+model Battle {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("draft") // draft, active, completed, archived
+  championId  String?  // ID du fighter vainqueur
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fighters Fighter[]
+  collaborations Collaboration[]
+  shareLinks     ShareLink[]
+  activities     Activity[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("battles")
+}
+
+// Fighter model (ex-Option)
+model Fighter {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  score       Int      @default(0) // Score de combat calculé
+  order       Int      @default(0) // Ordre d'affichage
+  battleId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  battle    Battle     @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  arguments Argument[]
+
+  @@index([battleId])
+  @@map("fighters")
+}
+
+// Argument model (powers/weaknesses)
+model Argument {
+  id        String   @id @default(uuid())
+  text      String
+  type      String // "power" (ex-pro) ou "weakness" (ex-con)
+  weight    Int      @default(3) // 1-5 (Power Level)
+  fighterId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  fighter Fighter @relation(fields: [fighterId], references: [id], onDelete: Cascade)
+
+  @@index([fighterId])
+  @@map("arguments")
+}
+
+// Badge model (gamification)
+model Badge {
+  id         String   @id @default(uuid())
+  badgeType  String // first-blood, veteran, champion, etc.
+  userId     String
+  unlockedAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeType]) // Un badge par type par user
+  @@index([userId])
+  @@map("badges")
+}
+
+// Template model (Quick Battles)
+model Template {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  category    String // career, life, tech, finance, health
+  icon        String? // Emoji ou icon name
+  fighters    String // JSON stringifié : [{ name, description, arguments: [{ text, type, weight }] }]
+  createdAt   DateTime @default(now())
+
+  @@map("templates")
+}
+
+// Collaboration model - Lien User ↔ Battle avec rôle
+model Collaboration {
+  id        String   @id @default(uuid())
+  battleId  String
+  userId    String
+  role      String   @default("editor") // owner, editor, viewer
+  invitedBy String?
+  joinedAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  // Relations
+  battle Battle @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviter User? @relation("Invitations", fields: [invitedBy], references: [id])
+
+  @@unique([battleId, userId])
+  @@index([battleId])
+  @@index([userId])
+  @@map("collaborations")
+}
+
+// ShareLink model - Liens partageables avec token
+model ShareLink {
+  id        String   @id @default(uuid())
+  battleId  String
+  token     String   @unique
+  role      String   @default("viewer")
+  expiresAt DateTime?
+  createdBy String
+  createdAt DateTime @default(now())
+  usageCount Int     @default(0)
+  maxUsage  Int?
+
+  // Relations
+  battle  Battle @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  creator User   @relation(fields: [createdBy], references: [id])
+
+  @@index([token])
+  @@index([battleId])
+  @@map("share_links")
+}
+
+// Activity model - Log des actions collaboratives
+model Activity {
+  id        String   @id @default(uuid())
+  battleId  String
+  userId    String
+  action    String
+  entityType String?
+  entityId  String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  battle Battle @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([battleId])
+  @@index([userId])
+  @@map("activities")
+}

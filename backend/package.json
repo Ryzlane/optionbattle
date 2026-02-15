@@ -1,0 +1,37 @@
+{
+  "name": "optionbattle-backend",
+  "version": "1.0.0",
+  "description": "Backend API for OptionBattle - Gamified decision-making platform",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed": "node prisma/seed.js",
+    "studio": "prisma studio",
+    "generate": "prisma generate"
+  },
+  "keywords": ["battle", "decision-making", "gamification", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "express-validator": "^7.2.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.1.6",
+    "socket.io": "^4.8.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "prisma": "5.22.0"
+  }
+}
