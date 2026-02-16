@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useCollaboration } from './CollaborationContext';
+import { useAuth } from './AuthContext';
 import api from '../services/api';
 
 const ArenaContext = createContext();
@@ -17,10 +18,16 @@ export function ArenaProvider({ children }) {
   const [selectedArena, setSelectedArena] = useState(null);
   const [loading, setLoading] = useState(true);
   const { socket, isConnected } = useCollaboration();
+  const { user } = useAuth();
 
-  // Fetch arenas on mount
+  // Fetch arenas on mount only if user is logged in
   useEffect(() => {
     const fetchArenas = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await api.get('/arenas');
         setArenas(response.data.data.arenas);
@@ -32,7 +39,7 @@ export function ArenaProvider({ children }) {
     };
 
     fetchArenas();
-  }, []);
+  }, [user]);
 
   // Join arena room when selected
   useEffect(() => {
@@ -64,9 +71,31 @@ export function ArenaProvider({ children }) {
     });
 
     socket.on('battle:created', ({ battle }) => {
-      // Refresh arena stats if needed
-      if (selectedArena && battle.arenaId === selectedArena.id) {
-        // Optionally refetch or update count
+      // Mettre à jour le count de battles de l'arène
+      if (battle.arenaId) {
+        setArenas(prev => prev.map(a => {
+          if (a.id === battle.arenaId) {
+            return {
+              ...a,
+              _count: {
+                ...a._count,
+                battles: (a._count?.battles || 0) + 1
+              }
+            };
+          }
+          return a;
+        }));
+
+        // Mettre à jour selectedArena si c'est la même
+        if (selectedArena?.id === battle.arenaId) {
+          setSelectedArena(prev => ({
+            ...prev,
+            _count: {
+              ...prev._count,
+              battles: (prev._count?.battles || 0) + 1
+            }
+          }));
+        }
       }
     });
 
@@ -99,6 +128,22 @@ export function ArenaProvider({ children }) {
     }
   };
 
+  const removeArena = (arenaId) => {
+    setArenas(prev => prev.filter(a => a.id !== arenaId));
+    if (selectedArena?.id === arenaId) {
+      setSelectedArena(null);
+    }
+  };
+
+  const refreshArenas = async () => {
+    try {
+      const response = await api.get('/arenas');
+      setArenas(response.data.data.arenas);
+    } catch (error) {
+      console.error('Failed to refresh arenas:', error);
+    }
+  };
+
   return (
     <ArenaContext.Provider
       value={{
@@ -108,7 +153,9 @@ export function ArenaProvider({ children }) {
         loading,
         createArena,
         updateArena,
-        deleteArena
+        deleteArena,
+        removeArena,
+        refreshArenas
       }}
     >
       {children}

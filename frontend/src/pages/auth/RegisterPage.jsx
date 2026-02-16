@@ -45,7 +45,14 @@ export default function RegisterPage() {
     try {
       await register(formData.email, formData.password, formData.name);
       toast.success('Compte créé avec succès ! Bienvenue dans l\'arène ⚔️');
-      navigate('/arena');
+
+      // Vérifier s'il y a un token d'arène en attente
+      const pendingArenaToken = sessionStorage.getItem('pendingArenaToken');
+      if (pendingArenaToken) {
+        navigate(`/arena/join/${pendingArenaToken}`);
+      } else {
+        navigate('/arena');
+      }
     } catch (error) {
       console.error('Erreur d\'inscription:', error);
       toast.error(error.response?.data?.message || 'Erreur lors de la création du compte');

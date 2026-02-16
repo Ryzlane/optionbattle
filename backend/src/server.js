@@ -37,7 +37,7 @@ app.use(cors({
 // Rate limiting global
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requêtes max
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 1000 en dev, 100 en prod
   message: {
     success: false,
     message: 'Trop de requêtes, réessayez plus tard'
@@ -54,7 +54,10 @@ const authLimiter = rateLimit({
   }
 });
 
-app.use(generalLimiter);
+// Appliquer le rate limiting seulement en production
+if (process.env.NODE_ENV === 'production') {
+  app.use(generalLimiter);
+}
 
 // Parsing
 app.use(express.json());

@@ -138,7 +138,7 @@ export const getBattle = async (req, res, next) => {
  */
 export const createBattle = async (req, res, next) => {
   try {
-    const { title, description, status = 'draft' } = req.body;
+    const { title, description, status = 'draft', arenaId } = req.body;
     const userId = req.user.id;
 
     const battle = await prisma.battle.create({
@@ -146,7 +146,8 @@ export const createBattle = async (req, res, next) => {
         title,
         description,
         status,
-        userId
+        userId,
+        arenaId: arenaId || null
       }
     });
 

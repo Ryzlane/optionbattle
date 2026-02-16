@@ -17,7 +17,7 @@ createRoot(document.getElementById('root')).render(
           <ArenaProvider>
             <SoundProvider>
               <App />
-              <Toaster position="top-right" richColors />
+              <Toaster position="top-right" richColors closeButton />
             </SoundProvider>
           </ArenaProvider>
         </CollaborationProvider>

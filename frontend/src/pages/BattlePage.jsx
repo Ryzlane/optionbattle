@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Trash2, Save, Trophy, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, Trophy, Loader2, CheckCircle, LogOut } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import api from '../services/api';
 import Layout from '../components/shared/Layout';
@@ -14,12 +14,14 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useRealtimeBattle } from '../hooks/useRealtimeBattle';
 import { useCollaboration } from '../contexts/CollaborationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useSound } from '../contexts/SoundContext';
 import { cn } from '../utils/cn';
 
 export default function BattlePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { playVictory, playDelete } = useSound();
   const { isConnected, onlineUsers, emit } = useCollaboration();
   const [initialBattle, setInitialBattle] = useState(null);
@@ -101,6 +103,19 @@ export default function BattlePage() {
       console.error('Erreur suppression battle:', error);
       toast.error('Erreur lors de la suppression');
       setDeleting(false);
+    }
+  };
+
+  const handleLeaveBattle = async () => {
+    if (!confirm(`Quitter la battle "${battle.title}" ?`)) return;
+
+    try {
+      await api.post(`/collaboration/${id}/leave`);
+      toast.success('Vous avez quitté la battle');
+      navigate('/arena');
+    } catch (error) {
+      console.error('Erreur en quittant la battle:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la sortie');
     }
   };
 
@@ -200,14 +215,26 @@ export default function BattlePage() {
                 🏆 Battle terminée
               </div>
             )}
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            {battle.userId !== user?.id && (
+              <Button
+                variant="outline"
+                onClick={handleLeaveBattle}
+                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Quitter
+              </Button>
+            )}
+            {battle.userId === user?.id && (
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
 

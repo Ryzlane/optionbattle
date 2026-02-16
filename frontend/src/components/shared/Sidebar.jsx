@@ -40,7 +40,7 @@ export default function Sidebar() {
         </Button>
       </div>
 
-      {/* Personal Battles */}
+      {/* Personal Arena */}
       <Link
         to="/arena"
         className={cn(
@@ -50,7 +50,7 @@ export default function Sidebar() {
         onClick={() => setSelectedArena(null)}
       >
         <Swords className="w-5 h-5 text-battle-primary flex-shrink-0" />
-        {isOpen && <span className="text-sm font-medium">Battles Perso</span>}
+        {isOpen && <span className="text-sm font-medium">Arena Perso</span>}
       </Link>
 
       {/* Arenas List */}

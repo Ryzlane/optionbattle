@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import BattlePage from './pages/BattlePage';
 import JoinBattlePage from './pages/JoinBattlePage';
 import ArenaPage from './pages/ArenaPage';
+import JoinArenaPage from './pages/JoinArenaPage';
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -34,7 +35,16 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  return user ? <Navigate to="/arena" /> : children;
+  // Si l'utilisateur est connecté, vérifier s'il y a un token d'arène en attente
+  if (user) {
+    const pendingArenaToken = sessionStorage.getItem('pendingArenaToken');
+    if (pendingArenaToken) {
+      return <Navigate to={`/arena/join/${pendingArenaToken}`} />;
+    }
+    return <Navigate to="/arena" />;
+  }
+
+  return children;
 };
 
 function App() {
@@ -82,6 +92,10 @@ function App() {
             <JoinBattlePage />
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/arena/join/:token"
+        element={<JoinArenaPage />}
       />
       <Route
         path="/arenas/:id"

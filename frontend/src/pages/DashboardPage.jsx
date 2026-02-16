@@ -20,12 +20,16 @@ export default function DashboardPage() {
     try {
       // Récupérer toutes les battles pour les stats
       const allResponse = await api.get('/battles');
-      setAllBattles(allResponse.data.data.battles);
+      // Filtrer uniquement les battles personnelles (sans arenaId)
+      const personalBattles = allResponse.data.data.battles.filter(b => !b.arenaId);
+      setAllBattles(personalBattles);
 
       // Récupérer les battles filtrées pour l'affichage
       const url = filterStatus === 'all' ? '/battles' : `/battles?status=${filterStatus}`;
       const response = await api.get(url);
-      setBattles(response.data.data.battles);
+      // Filtrer uniquement les battles personnelles (sans arenaId)
+      const filteredPersonalBattles = response.data.data.battles.filter(b => !b.arenaId);
+      setBattles(filteredPersonalBattles);
     } catch (error) {
       console.error('Erreur chargement battles:', error);
       toast.error('Erreur lors du chargement des battles');
@@ -61,10 +65,10 @@ export default function DashboardPage() {
               <div className="w-10 h-10 bg-battle-primary rounded-lg flex items-center justify-center">
                 <Swords className="w-6 h-6 text-white" />
               </div>
-              <span>Battle Arena</span>
+              <span>Battles Personnelles</span>
             </h1>
             <p className="text-muted-foreground mt-1">
-              Gérez vos battles et laissez vos options combattre
+              Gérez vos battles personnelles et laissez vos options combattre
             </p>
           </div>
           <div className="flex items-center space-x-3">

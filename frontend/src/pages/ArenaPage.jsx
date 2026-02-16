@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Users, Settings, Swords, Trophy } from 'lucide-react';
+import { Users, Settings, Swords, Trophy, LogOut } from 'lucide-react';
 import { useArena } from '../contexts/ArenaContext';
 import api from '../services/api';
 import Layout from '../components/shared/Layout';
 import BattleCard from '../components/arena/BattleCard';
 import CreateBattleDialog from '../components/arena/CreateBattleDialog';
+import ArenaSettingsDialog from '../components/arena/ArenaSettingsDialog';
+import ArenaCollaboratorsList from '../components/arena/ArenaCollaboratorsList';
 import { Button } from '../components/ui/Button';
 
 export default function ArenaPage() {
   const { id } = useParams();
-  const { selectedArena, setSelectedArena } = useArena();
+  const navigate = useNavigate();
+  const { selectedArena, setSelectedArena, removeArena } = useArena();
   const [arena, setArena] = useState(null);
   const [battles, setBattles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +41,20 @@ export default function ArenaPage() {
 
   const handleBattleCreated = (newBattle) => {
     setBattles((prev) => [newBattle, ...prev]);
+  };
+
+  const handleLeaveArena = async () => {
+    if (!confirm(`Quitter l'arène "${arena.title}" ?`)) return;
+
+    try {
+      await api.post(`/arena-collaboration/${id}/leave`);
+      removeArena(id); // Retirer immédiatement de la sidebar
+      toast.success('Vous avez quitté l\'arène');
+      navigate('/arena');
+    } catch (error) {
+      console.error('Erreur en quittant l\'arène:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la sortie');
+    }
   };
 
   if (loading) {
@@ -91,13 +108,26 @@ export default function ArenaPage() {
               </div>
               <div className="flex items-center space-x-1">
                 <Users className="w-4 h-4" />
-                <span>{arena._count?.collaborations || 0} membre{arena._count?.collaborations > 1 ? 's' : ''}</span>
+                <span>{(arena._count?.collaborations || 0) + 1} membre{(arena._count?.collaborations || 0) + 1 > 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
+            <ArenaCollaboratorsList arenaId={id} />
             <CreateBattleDialog arenaId={id} onBattleCreated={handleBattleCreated} />
+            {arena.role === 'owner' ? (
+              <ArenaSettingsDialog arenaId={id} arena={arena} />
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleLeaveArena}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Quitter l'arène
+              </Button>
+            )}
           </div>
         </div>
 

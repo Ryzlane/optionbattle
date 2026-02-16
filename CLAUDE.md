@@ -8,7 +8,7 @@ Ce fichier contient les instructions et conventions pour travailler sur le proje
 
 OptionBattle est une plateforme gamifiée d'aide à la décision qui transforme le processus décisionnel en une bataille épique entre options. Chaque option devient un "Fighter" avec des "Attack Powers" (arguments pro) et "Weaknesses" (arguments con). L'application calcule automatiquement un score de combat pour chaque fighter et déclare un vainqueur.
 
-### État d'avancement : 95% ✅
+### État d'avancement : 98% ✅
 
 **✅ Implémenté** :
 - ✅ Backend Auth (JWT + bcrypt)
@@ -25,6 +25,10 @@ OptionBattle est une plateforme gamifiée d'aide à la décision qui transforme 
 - ✅ **Partage par email et liens partageables**
 - ✅ **Synchronisation multi-utilisateurs instantanée**
 - ✅ **Indicateurs de présence en ligne**
+- ✅ **Arènes collaboratives (Workspaces multi-utilisateurs)**
+- ✅ **Sidebar navigation avec arènes**
+- ✅ **Permissions au niveau arène avec cascade vers battles**
+- ✅ **Rejoindre arène sans compte (redirect après login/register)**
 
 **📝 À venir (optionnel)** :
 - Templates (Quick Battles pré-configurés)
@@ -61,14 +65,18 @@ optionbattle/
 │   │   │   ├── fighter.controller.js ✅
 │   │   │   ├── argument.controller.js ✅
 │   │   │   ├── badge.controller.js ✅
-│   │   │   └── collaboration.controller.js ✅
+│   │   │   ├── collaboration.controller.js ✅
+│   │   │   ├── arena.controller.js ✅
+│   │   │   └── arenaCollaboration.controller.js ✅
 │   │   ├── routes/
 │   │   │   ├── auth.routes.js ✅
 │   │   │   ├── battle.routes.js ✅
 │   │   │   ├── fighter.routes.js ✅
 │   │   │   ├── argument.routes.js ✅
 │   │   │   ├── badge.routes.js ✅
-│   │   │   └── collaboration.routes.js ✅
+│   │   │   ├── collaboration.routes.js ✅
+│   │   │   ├── arena.routes.js ✅
+│   │   │   └── arenaCollaboration.routes.js ✅
 │   │   ├── middleware/
 │   │   │   ├── auth.js ✅
 │   │   │   ├── validation.js ✅
@@ -83,7 +91,7 @@ optionbattle/
 │   │   │   └── scoring.js ✅
 │   │   └── server.js ✅
 │   ├── prisma/
-│   │   └── schema.prisma ✅ (User, Battle, Fighter, Argument, Badge, Collaboration, ShareLink, Activity)
+│   │   └── schema.prisma ✅ (User, Arena, ArenaCollaboration, ArenaShareLink, ArenaActivity, Battle, Fighter, Argument, Badge, Collaboration, ShareLink, Activity)
 │   └── .env ✅
 │
 └── frontend/
@@ -92,20 +100,23 @@ optionbattle/
     │   │   ├── auth/
     │   │   │   ├── LoginPage.jsx ✅
     │   │   │   └── RegisterPage.jsx ✅
-    │   │   ├── DashboardPage.jsx ✅
+    │   │   ├── DashboardPage.jsx ✅ (Arena Perso, battles personnelles)
     │   │   ├── BattlePage.jsx ✅
-    │   │   └── JoinBattlePage.jsx ✅
+    │   │   ├── JoinBattlePage.jsx ✅
+    │   │   ├── ArenaPage.jsx ✅ (Page arène avec battles)
+    │   │   └── JoinArenaPage.jsx ✅ (Rejoindre arène via lien)
     │   ├── components/
     │   │   ├── ui/ (Button, Input, Label, Card, Dialog, Slider) ✅
     │   │   ├── auth/ ✅
     │   │   ├── battle/ (FighterCard, AddFighterDialog, AddArgumentDialog, ArgumentItem) ✅
-    │   │   ├── arena/ (BattleCard, CreateBattleDialog) ✅
+    │   │   ├── arena/ (BattleCard, CreateBattleDialog, ArenaSettingsDialog, ArenaCollaboratorsList) ✅
     │   │   ├── gamification/ (BadgeItem, BadgeNotification) ✅
     │   │   ├── collaboration/ (ShareDialog, CollaboratorsList, OnlineIndicator) ✅
-    │   │   └── shared/ (Layout) ✅
+    │   │   └── shared/ (Layout, Sidebar, CreateArenaDialog) ✅
     │   ├── contexts/
     │   │   ├── AuthContext.jsx ✅
     │   │   ├── CollaborationContext.jsx ✅
+    │   │   ├── ArenaContext.jsx ✅
     │   │   └── SoundContext.jsx ✅
     │   ├── hooks/
     │   │   ├── useAutoSave.js ✅
@@ -127,12 +138,16 @@ optionbattle/
 
 ```
 User (utilisateurs)
-  ├── Battle (batailles) - title, description, status, championId
-  │     ├── Fighter (combattants) - name, description, score, order
-  │     │     └── Argument (powers/weaknesses) - text, type (power/weakness), weight (1-5)
-  │     ├── Collaboration (collaborateurs) - role (owner/editor/viewer), joinedAt, lastSeenAt
-  │     ├── ShareLink (liens partageables) - token, role, expiresAt, usageCount
-  │     └── Activity (historique) - action, entityType, entityId, metadata, createdAt
+  ├── Arena (arènes/workspaces) - title, description, status
+  │     ├── Battle (batailles) - title, description, status, championId, arenaId
+  │     │     ├── Fighter (combattants) - name, description, score, order
+  │     │     │     └── Argument (powers/weaknesses) - text, type (power/weakness), weight (1-5)
+  │     │     ├── Collaboration (collaborateurs battle) - role, joinedAt, lastSeenAt
+  │     │     ├── ShareLink (liens partageables battle) - token, role, expiresAt, usageCount
+  │     │     └── Activity (historique battle) - action, entityType, entityId, metadata
+  │     ├── ArenaCollaboration (collaborateurs arène) - role (owner/editor/viewer), joinedAt
+  │     ├── ArenaShareLink (liens partageables arène) - token, role, expiresAt, usageCount
+  │     └── ArenaActivity (historique arène) - action, entityType, entityId, metadata
   └── Badge (badges débloqués) - badgeType, unlockedAt
 
 Template (Quick Battles pré-configurés)
@@ -140,12 +155,16 @@ Template (Quick Battles pré-configurés)
 ```
 
 Relations :
-- User 1:N Battle 1:N Fighter 1:N Argument
+- User 1:N Arena 1:N Battle 1:N Fighter 1:N Argument
 - User 1:N Badge
-- User N:M Battle (via Collaboration) - Système de permissions multi-utilisateurs
-- Battle 1:N ShareLink - Liens partageables avec rôles
-- Battle 1:N Activity - Log des actions collaboratives
+- User N:M Arena (via ArenaCollaboration) - Permissions cascade vers battles
+- User N:M Battle (via Collaboration) - Permissions au niveau battle
+- Arena 1:N ArenaShareLink - Liens partageables arène
+- Arena 1:N ArenaActivity - Log des actions arène
+- Battle 1:N ShareLink - Liens partageables battle
+- Battle 1:N Activity - Log des actions battle
 - Battle N:1 Fighter (championId)
+- Battle N:1 Arena (arenaId, nullable pour battles perso)
 
 ## 🎮 Vocabulaire OptionBattle
 
@@ -240,6 +259,200 @@ const { battle, setBattle } = useRealtimeBattle(battleId, initialBattle);
 - Validation rôle avant chaque action critique
 - Rate limiting sur endpoints d'invitation
 - Expiration optionnelle des liens partageables
+
+## 🏟️ Arènes Collaboratives (Workspaces)
+
+### Concept
+
+Les **Arènes** sont des workspaces collaboratifs qui regroupent plusieurs battles. C'est une couche supérieure à la collaboration au niveau battle, permettant d'organiser des battles par équipes, projets ou familles.
+
+**Hiérarchie** :
+```
+User
+├── Arena Perso (battles personnelles, arenaId = null)
+└── Arènes collaboratives
+    ├── Arena 1 (workspace partagé)
+    │   ├── Battle A
+    │   ├── Battle B
+    │   └── Battle C
+    └── Arena 2 (workspace partagé)
+        └── Battle D
+```
+
+### Architecture Arènes
+
+**Modèles Backend** :
+- `Arena` - Workspace collaboratif (title, description, status)
+- `ArenaCollaboration` - Permissions au niveau arène (role: owner/editor/viewer)
+- `ArenaShareLink` - Liens partageables pour arènes
+- `ArenaActivity` - Log des actions dans l'arène
+
+**Relations** :
+- User 1:N Arena (propriétaire)
+- User N:M Arena (via ArenaCollaboration)
+- Arena 1:N Battle (une arène contient plusieurs battles)
+- Battle N:1 Arena (une battle peut appartenir à une arène)
+
+### Système de Permissions Arène
+
+**Cascade arène → battles** :
+- Les permissions d'arène s'appliquent automatiquement à toutes les battles de l'arène
+- Un membre "editor" de l'arène peut modifier toutes ses battles
+- Un membre "viewer" de l'arène ne peut que lire les battles
+
+**Permissions arène** :
+
+| Rôle | Lire battles | Créer battle | Modifier battles | Gérer arène | Inviter | Quitter |
+|------|-------------|--------------|-----------------|-------------|---------|---------|
+| **owner** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ (supprimer) |
+| **editor** | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **viewer** | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
+
+**Note** : Tous les membres (même viewers) peuvent créer des battles dans l'arène pour encourager la participation démocratique.
+
+### Routes Arènes
+
+**Backend API** :
+- `GET /api/arenas` - Liste arènes (owned + collaborated)
+- `GET /api/arenas/:id` - Détails arène avec battles
+- `POST /api/arenas` - Créer une arène
+- `PUT /api/arenas/:id` - Modifier arène (owner seulement)
+- `DELETE /api/arenas/:id` - Supprimer arène (owner seulement)
+
+**Collaboration arène** :
+- `GET /api/arena-collaboration/:arenaId/collaborators` - Liste membres
+- `POST /api/arena-collaboration/:arenaId/collaborators` - Inviter par email
+- `DELETE /api/arena-collaboration/:arenaId/collaborators/:userId` - Retirer membre (owner)
+- `POST /api/arena-collaboration/:arenaId/share-links` - Créer lien
+- `GET /api/arena-collaboration/:arenaId/share-links` - Liste liens
+- `DELETE /api/arena-collaboration/:arenaId/share-links/:linkId` - Supprimer lien
+- `POST /api/arena-collaboration/join/:token` - Rejoindre via lien (public)
+- `POST /api/arena-collaboration/:arenaId/leave` - Quitter arène (collaborateur)
+- `GET /api/arena-collaboration/:arenaId/activities` - Historique
+
+**WebSocket Events** :
+- `arena:join` - Rejoindre une arène room
+- `arena:leave` - Quitter une arène room
+- `arena:updated` - Modification de l'arène (titre, description)
+- `arena:deleted` - Arène supprimée
+- `battle:created` - Nouvelle battle dans l'arène (broadcast à tous)
+
+### Frontend Arènes
+
+**ArenaContext** :
+```javascript
+import { useArena } from './contexts/ArenaContext';
+
+const {
+  arenas,              // Liste des arènes
+  selectedArena,       // Arène actuellement sélectionnée
+  setSelectedArena,    // Sélectionner une arène
+  loading,             // État chargement
+  createArena,         // Créer nouvelle arène
+  updateArena,         // Modifier arène
+  deleteArena,         // Supprimer arène
+  removeArena,         // Retirer arène de la liste (après leave)
+  refreshArenas        // Rafraîchir liste arènes
+} = useArena();
+```
+
+**Composants** :
+- `<Sidebar />` - Navigation avec liste d'arènes + "Arena Perso"
+- `<CreateArenaDialog />` - Dialog création arène
+- `<ArenaSettingsDialog />` - Gestion collaborateurs arène (owner)
+- `<ArenaCollaboratorsList />` - Liste membres avec rôles et delete (owner)
+- `<ArenaPage />` - Page détails arène avec battles
+
+**Pages** :
+- `/arena` - Arena Perso (battles personnelles, arenaId = null)
+- `/arenas/:id` - Page arène avec liste battles
+- `/arena/join/:token` - Rejoindre arène via lien (public, redirect si non connecté)
+
+### Fonctionnalités Arènes
+
+1. **Sidebar Navigation** :
+   - "Arena Perso" pour battles personnelles
+   - Liste arènes collaboratives avec count battles
+   - Highlight arène sélectionnée
+   - Bouton "Créer une arène"
+   - Collapsible (toggle avec chevron)
+
+2. **Création Arène** :
+   - Dialog avec titre + description
+   - Arène créée avec rôle "owner"
+   - Ajout instantané dans sidebar
+
+3. **Gestion Collaborateurs** :
+   - Invitation par email (owner uniquement)
+   - Liens partageables avec rôle (editor/viewer)
+   - Liste membres avec avatars et rôles
+   - Suppression membres (owner, avec icône poubelle)
+   - Count membres (incluant owner)
+
+4. **Rejoindre Arène** :
+   - Lien public `/arena/join/:token`
+   - Fonctionne même sans compte (redirect vers login/register)
+   - Token sauvegardé dans sessionStorage
+   - Après login/register, rejoint automatiquement l'arène
+   - Mise à jour instantanée sidebar après join
+
+5. **Quitter Arène** :
+   - Bouton "Quitter l'arène" pour collaborateurs (pas owner)
+   - Confirmation avant de quitter
+   - Retrait instantané de la sidebar
+   - Redirect vers "/arena"
+
+6. **Permissions Cascade** :
+   - Permissions arène appliquées à toutes battles
+   - Boutons conditionnels selon rôle
+   - Vérification côté serveur
+
+7. **Temps Réel** :
+   - WebSocket rooms `arena:{arenaId}`
+   - Broadcast battle créée/supprimée
+   - Mise à jour count battles en temps réel
+   - Notifications collaborateurs
+
+### UX Spécifique Arènes
+
+**Sidebar** :
+- "Arena Perso" avec icône Swords (violet)
+- Arènes collaboratives avec icône Users (gris)
+- Count battles affichée sous chaque arène
+- Border highlight pour arène sélectionnée
+- Bouton collapse (chevron qui tourne)
+
+**Notifications** :
+- Toast avec bouton fermeture (closeButton)
+- Position top-right
+- Rich colors (sonner)
+
+**Workflow Utilisateur** :
+
+1. **Créer workspace** :
+   - Clic "Créer une arène"
+   - Remplir titre + description
+   - Arène apparaît dans sidebar
+   - Navigation automatique vers arène
+
+2. **Inviter collaborateurs** :
+   - Ouvrir "Paramètres" (owner seulement)
+   - Onglet "Collaborateurs"
+   - Inviter par email ou créer lien
+   - Lien copié dans presse-papiers
+
+3. **Rejoindre arène** :
+   - Cliquer lien d'invitation
+   - Se connecter/s'inscrire si nécessaire
+   - Rejoint automatiquement arène
+   - Arène apparaît dans sidebar
+   - Navigation vers page arène
+
+4. **Quitter arène** :
+   - Bouton "Quitter l'arène" (collaborateurs)
+   - Confirmation
+   - Arène disparaît de sidebar
+   - Redirect vers Arena Perso
 
 ## 🔧 Configuration actuelle
 
@@ -663,7 +876,7 @@ Rendre la prise de décision **ludique, engageante et addictive** grâce à la g
 
 ## 📋 État actuel du projet (Mise à jour: 2026-02-16)
 
-### ✅ Fonctionnalités implémentées (95%)
+### ✅ Fonctionnalités implémentées (98%)
 
 **Backend complet** :
 - ✅ Authentification JWT (register, login, me)
@@ -718,6 +931,24 @@ Rendre la prise de décision **ludique, engageante et addictive** grâce à la g
 - ✅ Historique d'activité (Activity model)
 - ✅ Permissions vérifiées côté serveur (sécurité)
 - ✅ Reconnexion automatique Socket.io
+- ✅ Bouton "Quitter la battle" pour collaborateurs
+
+**Arènes collaboratives (Workspaces)** :
+- ✅ Backend complet (Arena, ArenaCollaboration, ArenaShareLink, ArenaActivity)
+- ✅ API Routes arènes (CRUD complet)
+- ✅ API Collaboration arène (invitations, liens, gestion membres)
+- ✅ WebSocket events arènes (join, leave, update, battle:created)
+- ✅ Frontend ArenaContext avec state management
+- ✅ Sidebar navigation avec liste arènes + "Arena Perso"
+- ✅ CreateArenaDialog et ArenaPage
+- ✅ ArenaSettingsDialog (gestion collaborateurs, owner)
+- ✅ ArenaCollaboratorsList avec rôles et delete
+- ✅ Permissions cascade arène → battles
+- ✅ Rejoindre arène sans compte (redirect login/register)
+- ✅ Bouton "Quitter l'arène" pour collaborateurs
+- ✅ Mise à jour instantanée sidebar (leave, join)
+- ✅ Count membres et battles en temps réel
+- ✅ Notifications avec bouton fermeture
 
 ### 📝 À faire (optionnel - 5%)
 
