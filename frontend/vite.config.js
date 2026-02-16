@@ -8,5 +8,6 @@ export default defineConfig({
     host: true,
     strictPort: true,
     port: 4173,
+    allowedHosts: ['all']  // Autorise tous les hosts
   }
 })
