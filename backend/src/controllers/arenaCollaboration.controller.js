@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
+import { sendInvitationEmail } from '../services/email.service.js';
 
 const prisma = new PrismaClient();
 
@@ -158,6 +159,21 @@ export const addCollaborator = async (req, res, next) => {
         }
       }
     });
+
+    // Envoyer email d'invitation
+    try {
+      const arenaUrl = `${process.env.FRONTEND_URL}/arenas/${arenaId}`;
+      await sendInvitationEmail(
+        targetUser.email,
+        req.user.name || req.user.email,
+        'arena',
+        arena.title,
+        arenaUrl
+      );
+    } catch (emailError) {
+      console.error('Erreur envoi email invitation:', emailError);
+      // Ne pas bloquer la création de la collaboration si l'email échoue
+    }
 
     // Émettre event socket pour notifier les collaborateurs connectés
     req.app.get('io')?.to(`arena:${arenaId}`).emit('collaborator:added', {

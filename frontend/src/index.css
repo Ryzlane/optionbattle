@@ -55,3 +55,20 @@
     animation: bounce-in 0.5s ease-out forwards;
   }
 }
+
+/* Sonner Toasts - Bouton de fermeture à gauche */
+[data-sonner-toast] {
+  display: flex;
+  flex-direction: row-reverse !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  left: 8px !important;
+  right: auto !important;
+  order: -1;
+}
+
+[data-sonner-toast] [data-content] {
+  margin-left: 32px !important;
+  margin-right: 0 !important;
+}

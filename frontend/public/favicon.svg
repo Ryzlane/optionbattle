@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#B45309;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#92400E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#grad)"/>
+  
+  <!-- Épées croisées -->
+  <!-- Épée gauche -->
+  <g transform="translate(50,50) rotate(-45)">
+    <rect x="-2" y="-25" width="4" height="40" fill="#FED7AA"/>
+    <rect x="-6" y="15" width="12" height="4" fill="#FED7AA"/>
+    <polygon points="0,-25 -4,-30 4,-30" fill="#FFF"/>
+  </g>
+  
+  <!-- Épée droite -->
+  <g transform="translate(50,50) rotate(45)">
+    <rect x="-2" y="-25" width="4" height="40" fill="#FED7AA"/>
+    <rect x="-6" y="15" width="12" height="4" fill="#FED7AA"/>
+    <polygon points="0,-25 -4,-30 4,-30" fill="#FFF"/>
+  </g>
+</svg>

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "build": "prisma generate && prisma migrate deploy",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "node prisma/seed.js",
@@ -27,6 +28,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "nanoid": "^5.1.6",
+    "nodemailer": "^8.0.1",
     "socket.io": "^4.8.3",
     "uuid": "^9.0.1"
   },

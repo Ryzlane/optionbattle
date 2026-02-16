@@ -26,11 +26,23 @@ const httpServer = createServer(app);
 // Sécurité
 app.use(helmet());
 
-// CORS
+// CORS - Autoriser le frontend (Railway ou local)
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL] // Railway frontend URL
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? 'https://your-domain.com'
-    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+  origin: (origin, callback) => {
+    // Autoriser les requêtes sans origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.some(allowed => allowed && origin.startsWith(allowed))) {
+      callback(null, true);
+    } else {
+      console.warn(`⚠️  CORS bloqué pour origin: ${origin}`);
+      callback(new Error('Non autorisé par CORS'));
+    }
+  },
   credentials: true
 }));
 

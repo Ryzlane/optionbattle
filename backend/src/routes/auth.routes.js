@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, me } from '../controllers/auth.controller.js';
+import { register, login, me, forgotPassword, resetPassword, deleteAccount } from '../controllers/auth.controller.js';
 import { validate } from '../middleware/validation.js';
 import { protect } from '../middleware/auth.js';
 
@@ -32,11 +32,36 @@ const loginValidation = [
     .withMessage('Le mot de passe est requis')
 ];
 
+const forgotPasswordValidation = [
+  body('email')
+    .isEmail()
+    .withMessage('Email invalide')
+    .normalizeEmail()
+];
+
+const resetPasswordValidation = [
+  body('token')
+    .isLength({ min: 32, max: 64 })
+    .withMessage('Token invalide'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Le mot de passe doit contenir au moins 6 caractères')
+];
+
+const deleteAccountValidation = [
+  body('password')
+    .notEmpty()
+    .withMessage('Le mot de passe est requis')
+];
+
 // Routes publiques
 router.post('/register', registerValidation, validate, register);
 router.post('/login', loginValidation, validate, login);
+router.post('/forgot-password', forgotPasswordValidation, validate, forgotPassword);
+router.post('/reset-password', resetPasswordValidation, validate, resetPassword);
 
 // Routes protégées
 router.get('/me', protect, me);
+router.delete('/delete-account', protect, deleteAccountValidation, validate, deleteAccount);
 
 export default router;

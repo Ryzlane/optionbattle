@@ -96,6 +96,14 @@ export default function LoginPage() {
                   required
                   disabled={loading}
                 />
+                <div className="text-right">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-battle-primary hover:underline"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
+                </div>
               </div>
             </CardContent>
 
