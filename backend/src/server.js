@@ -23,6 +23,9 @@ const PORT = process.env.PORT || 5001;
 // Créer HTTP server pour Socket.io
 const httpServer = createServer(app);
 
+// Trust proxy - IMPORTANT pour Railway/Heroku (reverse proxy)
+app.set('trust proxy', 1);
+
 // Sécurité
 app.use(helmet());
 
