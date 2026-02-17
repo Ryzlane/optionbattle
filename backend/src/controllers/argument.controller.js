@@ -135,7 +135,15 @@ export const createArgument = async (req, res, next) => {
       }
     });
 
-    const isEditor = collaboration && collaboration.role === 'editor';
+    let isArenaMember = false;
+    if (battle.arenaId) {
+      const arenaCollab = await prisma.arenaCollaboration.findUnique({
+        where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
+      });
+      isArenaMember = !!arenaCollab;
+    }
+
+    const isEditor = (collaboration && collaboration.role === 'editor') || isArenaMember;
 
     if (!isOwner && !isEditor) {
       return res.status(403).json({
@@ -213,7 +221,15 @@ export const updateArgument = async (req, res, next) => {
       }
     });
 
-    const isEditor = collaboration && collaboration.role === 'editor';
+    let isArenaMember = false;
+    if (battle.arenaId) {
+      const arenaCollab = await prisma.arenaCollaboration.findUnique({
+        where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
+      });
+      isArenaMember = !!arenaCollab;
+    }
+
+    const isEditor = (collaboration && collaboration.role === 'editor') || isArenaMember;
 
     if (!isOwner && !isEditor) {
       return res.status(403).json({
@@ -287,7 +303,15 @@ export const deleteArgument = async (req, res, next) => {
       }
     });
 
-    const isEditor = collaboration && collaboration.role === 'editor';
+    let isArenaMember = false;
+    if (battle.arenaId) {
+      const arenaCollab = await prisma.arenaCollaboration.findUnique({
+        where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
+      });
+      isArenaMember = !!arenaCollab;
+    }
+
+    const isEditor = (collaboration && collaboration.role === 'editor') || isArenaMember;
 
     if (!isOwner && !isEditor) {
       return res.status(403).json({

@@ -117,7 +117,21 @@ export const getBattle = async (req, res, next) => {
       }
     });
 
-    if (!isOwner && !collaboration) {
+    // Vérifier si l'utilisateur est membre de l'arène contenant cette battle
+    let isArenaMember = false;
+    if (battle.arenaId) {
+      const arenaCollaboration = await prisma.arenaCollaboration.findUnique({
+        where: {
+          arenaId_userId: {
+            arenaId: battle.arenaId,
+            userId
+          }
+        }
+      });
+      isArenaMember = !!arenaCollaboration;
+    }
+
+    if (!isOwner && !collaboration && !isArenaMember) {
       return res.status(403).json({
         success: false,
         message: 'Accès refusé à cette battle'
@@ -193,7 +207,15 @@ export const updateBattle = async (req, res, next) => {
       }
     });
 
-    const isEditor = collaboration && (collaboration.role === 'editor' || collaboration.role === 'owner');
+    let isArenaMember = false;
+    if (existingBattle.arenaId) {
+      const arenaCollab = await prisma.arenaCollaboration.findUnique({
+        where: { arenaId_userId: { arenaId: existingBattle.arenaId, userId } }
+      });
+      isArenaMember = !!arenaCollab;
+    }
+
+    const isEditor = (collaboration && (collaboration.role === 'editor' || collaboration.role === 'owner')) || isArenaMember;
 
     if (!isOwner && !isEditor) {
       return res.status(403).json({
