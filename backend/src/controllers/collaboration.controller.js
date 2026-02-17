@@ -660,22 +660,33 @@ async function checkBattleAccess(userId, battleId, requiredRole = null) {
     return { role: 'owner', battle };
   }
 
-  // Vérifier collaboration
+  // Vérifier collaboration directe sur la battle
   const collaboration = await prisma.collaboration.findUnique({
     where: {
       battleId_userId: { battleId, userId }
     }
   });
 
-  if (!collaboration) return null;
+  if (collaboration) {
+    // Vérifier rôle requis
+    if (requiredRole) {
+      const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
+      if (roleHierarchy[collaboration.role] < roleHierarchy[requiredRole]) {
+        return null;
+      }
+    }
+    return { role: collaboration.role, collaboration };
+  }
 
-  // Vérifier rôle requis
-  if (requiredRole) {
-    const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
-    if (roleHierarchy[collaboration.role] < roleHierarchy[requiredRole]) {
-      return null;
+  // Vérifier si membre de l'arène contenant cette battle
+  if (battle.arenaId) {
+    const arenaCollab = await prisma.arenaCollaboration.findUnique({
+      where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
+    });
+    if (arenaCollab) {
+      return { role: arenaCollab.role, arenaCollab };
     }
   }
 
-  return { role: collaboration.role, collaboration };
+  return null;
 }
