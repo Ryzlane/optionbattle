@@ -291,6 +291,14 @@ export default function BattlePage() {
                   battleId={id}
                   fighter={fighter}
                   isChampion={fighter.id === battle.championId}
+                  onFighterUpdated={(updatedFighter) => {
+                    if (updatedFighter) {
+                      setBattle(prev => ({
+                        ...prev,
+                        fighters: prev.fighters.map(f => f.id === updatedFighter.id ? updatedFighter : f)
+                      }));
+                    }
+                  }}
                 />
               ))}
           </div>

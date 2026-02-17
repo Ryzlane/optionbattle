@@ -31,7 +31,7 @@ const statusConfig = {
 
 export default function BattleCard({ battle }) {
   const status = statusConfig[battle.status] || statusConfig.draft;
-  const fightersCount = battle.fighters?.length || 0;
+  const fightersCount = battle._count?.fighters ?? battle.fighters?.length ?? 0;
   const collaboratorsCount = battle.collaboratorsCount || 1;
   const hasChampion = !!battle.championId;
 
