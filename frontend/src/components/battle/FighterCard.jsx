@@ -40,15 +40,23 @@ export default function FighterCard({ battleId, fighter, isChampion, onFighterUp
     }
   };
 
-  const handleArgumentAdded = () => {
+  const handleArgumentAdded = (newArgument) => {
     if (onFighterUpdated) {
-      onFighterUpdated();
+      const updatedFighter = {
+        ...fighter,
+        arguments: [...(fighter.arguments || []), newArgument]
+      };
+      onFighterUpdated(updatedFighter);
     }
   };
 
-  const handleArgumentDeleted = () => {
+  const handleArgumentDeleted = (deletedArgumentId) => {
     if (onFighterUpdated) {
-      onFighterUpdated();
+      const updatedFighter = {
+        ...fighter,
+        arguments: (fighter.arguments || []).filter(arg => arg.id !== deletedArgumentId)
+      };
+      onFighterUpdated(updatedFighter);
     }
   };
 
