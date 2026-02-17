@@ -164,7 +164,7 @@ export default function BattlePage() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <Link
-              to="/arena"
+              to={battle?.arenaId ? `/arenas/${battle.arenaId}` : '/arena'}
               className="inline-flex items-center space-x-1 text-sm text-muted-foreground hover:text-battle-primary mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
