@@ -4,6 +4,9 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT) || 2525,
+  connectionTimeout: 5000,  // 5s timeout pour diagnostiquer
+  greetingTimeout: 5000,
+  socketTimeout: 10000,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD
