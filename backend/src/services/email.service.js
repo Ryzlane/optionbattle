@@ -1,29 +1,24 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Transporter Nodemailer (SMTP)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT) || 2525,
-  connectionTimeout: 5000,  // 5s timeout pour diagnostiquer
-  greetingTimeout: 5000,
-  socketTimeout: 10000,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Helper générique d'envoi
+// Helper générique d'envoi (via API HTTP - pas SMTP)
 export const sendEmail = async (to, subject, html) => {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@optionbattle.com',
+    const { data, error } = await resend.emails.send({
+      from: process.env.SMTP_FROM || 'onboarding@resend.dev',
       to,
       subject,
       html
     });
-    console.log(`✉️ Email envoyé à ${to}: ${info.messageId}`);
-    return info;
+
+    if (error) {
+      console.error(`❌ Erreur envoi email à ${to}:`, error);
+      throw new Error(error.message);
+    }
+
+    console.log(`✉️ Email envoyé à ${to}: ${data.id}`);
+    return data;
   } catch (error) {
     console.error(`❌ Erreur envoi email à ${to}:`, error);
     throw error;
