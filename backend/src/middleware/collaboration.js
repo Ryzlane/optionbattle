@@ -33,7 +33,7 @@ export const checkBattleAccess = (requiredRole = null) => {
         return next();
       }
 
-      // Vérifier si l'utilisateur est collaborateur
+      // Vérifier si l'utilisateur est collaborateur direct de la battle
       const collaboration = await prisma.collaboration.findUnique({
         where: {
           battleId_userId: {
@@ -43,36 +43,45 @@ export const checkBattleAccess = (requiredRole = null) => {
         }
       });
 
-      if (!collaboration) {
-        return res.status(403).json({
-          success: false,
-          message: 'Accès refusé à cette battle'
-        });
+      if (collaboration) {
+        // Vérifier le rôle requis
+        if (requiredRole) {
+          const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
+          if (roleHierarchy[collaboration.role] < roleHierarchy[requiredRole]) {
+            return res.status(403).json({
+              success: false,
+              message: 'Permissions insuffisantes pour cette action'
+            });
+          }
+        }
+        req.battleAccess = { role: collaboration.role, collaboration };
+        return next();
       }
 
-      // Vérifier le rôle requis
-      if (requiredRole) {
-        const roleHierarchy = {
-          owner: 3,
-          editor: 2,
-          viewer: 1
-        };
-
-        if (roleHierarchy[collaboration.role] < roleHierarchy[requiredRole]) {
-          return res.status(403).json({
-            success: false,
-            message: 'Permissions insuffisantes pour cette action'
-          });
+      // Vérifier si membre de l'arène contenant cette battle
+      if (battle.arenaId) {
+        const arenaCollab = await prisma.arenaCollaboration.findUnique({
+          where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
+        });
+        if (arenaCollab) {
+          if (requiredRole) {
+            const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
+            if (roleHierarchy[arenaCollab.role] < roleHierarchy[requiredRole]) {
+              return res.status(403).json({
+                success: false,
+                message: 'Permissions insuffisantes pour cette action'
+              });
+            }
+          }
+          req.battleAccess = { role: arenaCollab.role, arenaCollab };
+          return next();
         }
       }
 
-      // Injecter les infos d'accès dans la requête
-      req.battleAccess = {
-        role: collaboration.role,
-        collaboration
-      };
-
-      next();
+      return res.status(403).json({
+        success: false,
+        message: 'Accès refusé à cette battle'
+      });
     } catch (error) {
       next(error);
     }
