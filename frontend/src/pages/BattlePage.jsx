@@ -266,7 +266,9 @@ export default function BattlePage() {
           <h2 className="text-xl font-semibold text-slate-900">
             Fighters ({fighters.length})
           </h2>
-          <AddFighterDialog battleId={id} />
+          <AddFighterDialog battleId={id} onFighterAdded={(newFighter) => {
+              setBattle(prev => ({ ...prev, fighters: [...(prev.fighters || []), newFighter] }));
+            }} />
         </div>
 
         {/* Fighters Grid */}
@@ -275,7 +277,9 @@ export default function BattlePage() {
             <p className="text-muted-foreground mb-4">
               Aucun fighter dans l'arène. Ajoutez votre premier fighter pour commencer la battle !
             </p>
-            <AddFighterDialog battleId={id} />
+            <AddFighterDialog battleId={id} onFighterAdded={(newFighter) => {
+                setBattle(prev => ({ ...prev, fighters: [...(prev.fighters || []), newFighter] }));
+              }} />
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
