@@ -5,6 +5,436 @@ import { sendInvitationEmail } from '../services/email.service.js';
 const prisma = new PrismaClient();
 
 /**
+ * POST /api/arena-collaboration/:arenaId/invitations
+ * Envoyer une invitation à un collaborateur par email
+ */
+export const sendInvitation = async (req, res, next) => {
+  try {
+    const { arenaId } = req.params;
+    const { email, role } = req.body;
+    const userId = req.user.id;
+
+    // Vérifier ownership (seul owner peut inviter)
+    const arena = await prisma.arena.findUnique({
+      where: { id: arenaId }
+    });
+
+    if (!arena) {
+      return res.status(404).json({
+        success: false,
+        message: 'Arène non trouvée'
+      });
+    }
+
+    if (arena.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Seul le propriétaire peut inviter des collaborateurs'
+      });
+    }
+
+    // Chercher utilisateur par email (optionnel - peut ne pas exister)
+    const targetUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    // Vérifier si c'est le propriétaire
+    if (targetUser && targetUser.id === arena.userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Le propriétaire est déjà dans l\'arène'
+      });
+    }
+
+    // Vérifier si déjà collaborateur
+    if (targetUser) {
+      const existing = await prisma.arenaCollaboration.findUnique({
+        where: {
+          arenaId_userId: {
+            arenaId,
+            userId: targetUser.id
+          }
+        }
+      });
+
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cet utilisateur est déjà collaborateur'
+        });
+      }
+    }
+
+    // Vérifier si invitation pending existe déjà
+    const existingInvitation = await prisma.arenaInvitation.findUnique({
+      where: {
+        arenaId_email: {
+          arenaId,
+          email
+        }
+      }
+    });
+
+    if (existingInvitation && existingInvitation.status === 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Une invitation est déjà en attente pour cet email'
+      });
+    }
+
+    // Générer token unique
+    const token = nanoid(10);
+
+    // Calculer expiration (7 jours)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // Créer ArenaInvitation
+    const invitation = await prisma.arenaInvitation.create({
+      data: {
+        arenaId,
+        email,
+        role,
+        token,
+        expiresAt,
+        invitedBy: userId,
+        status: 'pending'
+      }
+    });
+
+    // Envoyer email d'invitation
+    try {
+      const acceptUrl = `${process.env.FRONTEND_URL}/arena/invitations/accept/${token}`;
+      await sendInvitationEmail(
+        email,
+        req.user.name || req.user.email,
+        'arena',
+        arena.title,
+        acceptUrl
+      );
+    } catch (emailError) {
+      console.error('Erreur envoi email invitation:', emailError);
+      // Ne pas bloquer la création de l'invitation si l'email échoue
+    }
+
+    // Émettre event socket pour notifier les collaborateurs connectés
+    req.app.get('io')?.to(`arena:${arenaId}`).emit('invitation:sent', {
+      invitation: {
+        id: invitation.id,
+        email: invitation.email,
+        role: invitation.role,
+        createdAt: invitation.createdAt
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Invitation envoyée avec succès',
+      data: { invitation }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/arena-collaboration/invitations/:token/accept
+ * Accepter une invitation à rejoindre une arène
+ */
+export const acceptInvitation = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+
+    // Trouver l'invitation par token
+    const invitation = await prisma.arenaInvitation.findUnique({
+      where: { token },
+      include: {
+        arena: {
+          select: {
+            id: true,
+            title: true,
+            userId: true
+          }
+        }
+      }
+    });
+
+    if (!invitation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invitation non trouvée'
+      });
+    }
+
+    // Vérifier status
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: invitation.status === 'accepted'
+          ? 'Cette invitation a déjà été acceptée'
+          : 'Cette invitation a été refusée'
+      });
+    }
+
+    // Vérifier expiration
+    if (new Date() > invitation.expiresAt) {
+      return res.status(410).json({
+        success: false,
+        message: 'Cette invitation a expiré'
+      });
+    }
+
+    // Vérifier que l'email correspond à l'utilisateur connecté
+    if (invitation.email.toLowerCase() !== userEmail.toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Cette invitation n\'est pas pour vous'
+      });
+    }
+
+    // Vérifier si déjà propriétaire
+    if (invitation.arena.userId === userId) {
+      await prisma.arenaInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'accepted' }
+      });
+
+      return res.json({
+        success: true,
+        message: 'Vous êtes déjà propriétaire de cette arène',
+        data: {
+          arenaId: invitation.arenaId,
+          alreadyMember: true
+        }
+      });
+    }
+
+    // Vérifier si déjà collaborateur (race condition)
+    const existingCollaboration = await prisma.arenaCollaboration.findUnique({
+      where: {
+        arenaId_userId: {
+          arenaId: invitation.arenaId,
+          userId
+        }
+      }
+    });
+
+    if (existingCollaboration) {
+      await prisma.arenaInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'accepted' }
+      });
+
+      return res.json({
+        success: true,
+        message: 'Vous êtes déjà collaborateur de cette arène',
+        data: {
+          arenaId: invitation.arenaId,
+          alreadyMember: true
+        }
+      });
+    }
+
+    // Transaction : créer collaboration + update invitation
+    let collaboration;
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        // Créer la collaboration
+        const collab = await tx.arenaCollaboration.create({
+          data: {
+            arenaId: invitation.arenaId,
+            userId,
+            role: invitation.role,
+            invitedBy: invitation.invitedBy
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        });
+
+        // Update invitation status
+        await tx.arenaInvitation.update({
+          where: { id: invitation.id },
+          data: { status: 'accepted' }
+        });
+
+        return collab;
+      });
+
+      collaboration = result;
+    } catch (error) {
+      // Gestion race condition (contrainte unique)
+      if (error.code === 'P2002') {
+        return res.json({
+          success: true,
+          message: 'Vous êtes déjà membre de cette arène',
+          data: {
+            arenaId: invitation.arenaId,
+            alreadyMember: true
+          }
+        });
+      }
+      throw error;
+    }
+
+    // Émettre event socket
+    req.app.get('io')?.to(`arena:${invitation.arenaId}`).emit('collaborator:joined', {
+      collaboration
+    });
+
+    res.json({
+      success: true,
+      message: `Vous avez rejoint l'arène "${invitation.arena.title}"`,
+      data: {
+        arenaId: invitation.arenaId,
+        collaboration
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/arena-collaboration/invitations/:token/reject
+ * Refuser une invitation à rejoindre une arène
+ */
+export const rejectInvitation = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const userEmail = req.user.email;
+
+    // Trouver l'invitation
+    const invitation = await prisma.arenaInvitation.findUnique({
+      where: { token }
+    });
+
+    if (!invitation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invitation non trouvée'
+      });
+    }
+
+    // Vérifier status
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cette invitation a déjà été traitée'
+      });
+    }
+
+    // Vérifier que l'email correspond
+    if (invitation.email.toLowerCase() !== userEmail.toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Cette invitation n\'est pas pour vous'
+      });
+    }
+
+    // Update status
+    await prisma.arenaInvitation.update({
+      where: { id: invitation.id },
+      data: { status: 'rejected' }
+    });
+
+    res.json({
+      success: true,
+      message: 'Invitation refusée'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/arena-collaboration/:arenaId/invitations
+ * Lister les invitations pendantes d'une arène
+ */
+export const getInvitations = async (req, res, next) => {
+  try {
+    const { arenaId } = req.params;
+    const userId = req.user.id;
+
+    // Vérifier ownership
+    const arena = await prisma.arena.findUnique({
+      where: { id: arenaId }
+    });
+
+    if (!arena || arena.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Seul le propriétaire peut voir les invitations'
+      });
+    }
+
+    // Récupérer les invitations pendantes
+    const invitations = await prisma.arenaInvitation.findMany({
+      where: {
+        arenaId,
+        status: 'pending'
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: { invitations }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * DELETE /api/arena-collaboration/:arenaId/invitations/:invitationId
+ * Annuler une invitation (owner uniquement)
+ */
+export const cancelInvitation = async (req, res, next) => {
+  try {
+    const { arenaId, invitationId } = req.params;
+    const userId = req.user.id;
+
+    // Vérifier ownership
+    const arena = await prisma.arena.findUnique({
+      where: { id: arenaId }
+    });
+
+    if (!arena || arena.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Seul le propriétaire peut annuler des invitations'
+      });
+    }
+
+    // Supprimer l'invitation
+    await prisma.arenaInvitation.delete({
+      where: { id: invitationId }
+    });
+
+    // Émettre event socket
+    req.app.get('io')?.to(`arena:${arenaId}`).emit('invitation:cancelled', {
+      invitationId
+    });
+
+    res.json({
+      success: true,
+      message: 'Invitation annulée'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * GET /api/arena-collaboration/:arenaId/collaborators
  * Lister les collaborateurs d'une arène
  */

@@ -9,7 +9,12 @@ import {
   createShareLink,
   deleteShareLink,
   joinViaToken,
-  getActivities
+  getActivities,
+  sendInvitation,
+  acceptInvitation,
+  rejectInvitation,
+  getInvitations,
+  cancelInvitation
 } from '../controllers/arenaCollaboration.controller.js';
 import { validate } from '../middleware/validation.js';
 import { protect } from '../middleware/auth.js';
@@ -62,6 +67,35 @@ const deleteLinkValidation = [
   ...arenaIdValidation,
   param('linkId').isUUID().withMessage('ID de lien invalide')
 ];
+
+const sendInvitationValidation = [
+  ...arenaIdValidation,
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Email invalide'),
+  body('role')
+    .isIn(['editor', 'viewer'])
+    .withMessage('Le rôle doit être "editor" ou "viewer"')
+];
+
+const invitationTokenValidation = [
+  param('token')
+    .isLength({ min: 10, max: 10 })
+    .withMessage('Token invalide')
+];
+
+const cancelInvitationValidation = [
+  ...arenaIdValidation,
+  param('invitationId').isUUID().withMessage('ID d\'invitation invalide')
+];
+
+// Routes invitations (protégées)
+router.post('/:arenaId/invitations', protect, sendInvitationValidation, validate, sendInvitation);
+router.get('/:arenaId/invitations', protect, arenaIdValidation, validate, getInvitations);
+router.delete('/:arenaId/invitations/:invitationId', protect, cancelInvitationValidation, validate, cancelInvitation);
+router.post('/invitations/:token/accept', protect, invitationTokenValidation, validate, acceptInvitation);
+router.post('/invitations/:token/reject', protect, invitationTokenValidation, validate, rejectInvitation);
 
 // Routes collaborateurs (protégées sauf joinViaToken)
 router.get('/:arenaId/collaborators', protect, arenaIdValidation, validate, getCollaborators);

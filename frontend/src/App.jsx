@@ -9,6 +9,7 @@ import BattlePage from './pages/BattlePage';
 import JoinBattlePage from './pages/JoinBattlePage';
 import ArenaPage from './pages/ArenaPage';
 import JoinArenaPage from './pages/JoinArenaPage';
+import AcceptInvitationPage from './pages/AcceptInvitationPage';
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -37,8 +38,12 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  // Si l'utilisateur est connecté, vérifier s'il y a un token d'arène en attente
+  // Si l'utilisateur est connecté, vérifier s'il y a un token en attente
   if (user) {
+    const pendingInvitationToken = sessionStorage.getItem('pendingInvitationToken');
+    if (pendingInvitationToken) {
+      return <Navigate to={`/arena/invitations/accept/${pendingInvitationToken}`} />;
+    }
     const pendingArenaToken = sessionStorage.getItem('pendingArenaToken');
     if (pendingArenaToken) {
       return <Navigate to={`/arena/join/${pendingArenaToken}`} />;
@@ -114,6 +119,10 @@ function App() {
       <Route
         path="/arena/join/:token"
         element={<JoinArenaPage />}
+      />
+      <Route
+        path="/arena/invitations/accept/:token"
+        element={<AcceptInvitationPage />}
       />
       <Route
         path="/arenas/:id"

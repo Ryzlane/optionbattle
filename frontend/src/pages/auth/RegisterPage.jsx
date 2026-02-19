@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Swords } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useArena } from '../../contexts/ArenaContext';
+import api from '../../services/api';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
@@ -11,6 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { refreshArenas } = useArena();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -46,7 +49,25 @@ export default function RegisterPage() {
       await register(formData.email, formData.password, formData.name);
       toast.success('Compte créé avec succès ! Bienvenue dans l\'arène ⚔️');
 
-      // Vérifier s'il y a un token d'arène en attente
+      // Vérifier s'il y a un token d'invitation en attente
+      const pendingInvitationToken = sessionStorage.getItem('pendingInvitationToken');
+      if (pendingInvitationToken) {
+        try {
+          const response = await api.post(`/arena-collaboration/invitations/${pendingInvitationToken}/accept`);
+          sessionStorage.removeItem('pendingInvitationToken');
+          await refreshArenas();
+          toast.success('Invitation acceptée !');
+          navigate(`/arenas/${response.data.data.arenaId}`);
+          return;
+        } catch (error) {
+          console.error('Erreur acceptation invitation:', error);
+          toast.error('Erreur lors de l\'acceptation de l\'invitation');
+          navigate('/arena');
+          return;
+        }
+      }
+
+      // Vérifier s'il y a un token d'arène en attente (lien partagé)
       const pendingArenaToken = sessionStorage.getItem('pendingArenaToken');
       if (pendingArenaToken) {
         navigate(`/arena/join/${pendingArenaToken}`);

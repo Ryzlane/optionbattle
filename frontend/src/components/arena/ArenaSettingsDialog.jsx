@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Settings, Mail, Link as LinkIcon, Trash2, Copy, Users, Loader2 } from 'lucide-react';
+import { Settings, Mail, Link as LinkIcon, Trash2, Copy, Users, Loader2, Inbox } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import InvitationsList from './InvitationsList';
 import {
   Dialog,
   DialogContent,
@@ -62,14 +63,14 @@ export default function ArenaSettingsDialog({ arenaId }) {
 
     setInviteLoading(true);
     try {
-      await api.post(`/arena-collaboration/${arenaId}/collaborators`, {
+      await api.post(`/arena-collaboration/${arenaId}/invitations`, {
         email: inviteEmail,
         role: inviteRole
       });
 
       toast.success(`Invitation envoyée à ${inviteEmail}`);
       setInviteEmail('');
-      fetchCollaborators();
+      // Pas besoin de fetchCollaborators ici car l'invitation est en attente
     } catch (error) {
       toast.error(error.response?.data?.message || 'Erreur lors de l\'invitation');
     } finally {
@@ -199,6 +200,17 @@ export default function ArenaSettingsDialog({ arenaId }) {
                   )}
                 </Button>
               </form>
+            </div>
+          )}
+
+          {/* Pending Invitations */}
+          {isOwner && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Inbox className="w-5 h-5 text-battle-primary" />
+                <h3 className="text-lg font-semibold">Invitations en attente</h3>
+              </div>
+              <InvitationsList arenaId={arenaId} />
             </div>
           )}
 

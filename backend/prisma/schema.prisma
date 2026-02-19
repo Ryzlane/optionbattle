@@ -32,11 +32,12 @@ model User {
   activities     Activity[]
 
   // Arena relations
-  arenas                    Arena[]
-  arenaCollaborations       ArenaCollaboration[]
-  arenaInvitationsSent      ArenaCollaboration[]  @relation("ArenaInvitations")
-  arenaShareLinks           ArenaShareLink[]
-  arenaActivities           ArenaActivity[]
+  arenas                          Arena[]
+  arenaCollaborations             ArenaCollaboration[]
+  arenaCollaborationInvitationsSent ArenaCollaboration[]  @relation("ArenaCollaborationInvitations")
+  arenaShareLinks                 ArenaShareLink[]
+  arenaActivities                 ArenaActivity[]
+  arenaInvitationsSent            ArenaInvitation[] @relation("ArenaInvitationsSent")
 
   @@map("users")
 }
@@ -209,6 +210,7 @@ model Arena {
   collaborations  ArenaCollaboration[]
   shareLinks      ArenaShareLink[]
   activities      ArenaActivity[]
+  invitations     ArenaInvitation[]
 
   @@index([userId])
   @@index([status])
@@ -228,7 +230,7 @@ model ArenaCollaboration {
   // Relations
   arena    Arena  @relation(fields: [arenaId], references: [id], onDelete: Cascade)
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inviter  User?  @relation("ArenaInvitations", fields: [invitedBy], references: [id])
+  inviter  User?  @relation("ArenaCollaborationInvitations", fields: [invitedBy], references: [id])
 
   @@unique([arenaId, userId])
   @@index([arenaId])
@@ -275,4 +277,27 @@ model ArenaActivity {
   @@index([arenaId])
   @@index([userId])
   @@map("arena_activities")
+}
+
+// ArenaInvitation model - Invitations avec acceptation
+model ArenaInvitation {
+  id        String   @id @default(uuid())
+  arenaId   String
+  email     String
+  role      String   @default("editor") // editor, viewer
+  token     String   @unique // Token pour acceptation (nanoid 10 chars)
+  status    String   @default("pending") // pending, accepted, rejected
+  expiresAt DateTime // 7 jours par défaut
+  invitedBy String
+  createdAt DateTime @default(now())
+
+  // Relations
+  arena    Arena @relation(fields: [arenaId], references: [id], onDelete: Cascade)
+  inviter  User  @relation("ArenaInvitationsSent", fields: [invitedBy], references: [id])
+
+  @@unique([arenaId, email]) // 1 invitation active par email par arène
+  @@index([token])
+  @@index([email])
+  @@index([status])
+  @@map("arena_invitations")
 }
