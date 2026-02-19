@@ -3,8 +3,8 @@ import { X, Send, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import api from '../../lib/api';
-import toast from 'react-hot-toast';
+import api from '../../services/api';
+import { toast } from 'sonner';
 
 export default function FeedbackDialog({ open, onOpenChange }) {
   const [message, setMessage] = useState('');
