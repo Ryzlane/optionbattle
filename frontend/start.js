@@ -4,9 +4,10 @@ import { spawn } from 'child_process';
 
 const port = process.env.PORT || '4173';
 
-console.log(`🚀 Starting Vite preview server on port ${port}...`);
+console.log(`🚀 Starting production server on port ${port}...`);
 
-const child = spawn('vite', ['preview', '--host', '0.0.0.0', '--port', port], {
+// Use 'serve' for production static file serving
+const child = spawn('serve', ['-s', 'dist', '-l', port], {
   stdio: 'inherit',
   shell: true
 });
