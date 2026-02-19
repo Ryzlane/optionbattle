@@ -13,8 +13,8 @@ const port = process.env.PORT || 4173;
 // Servir les fichiers statiques du dossier dist
 app.use(express.static(join(__dirname, 'dist')));
 
-// SPA fallback - toutes les routes non-API renvoient index.html
-app.get('*', (req, res) => {
+// SPA fallback - toutes les routes renvoient index.html
+app.use((req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'));
 });
 
