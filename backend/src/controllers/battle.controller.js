@@ -120,6 +120,15 @@ export const getBattle = async (req, res, next) => {
     // Vérifier si l'utilisateur est membre de l'arène contenant cette battle
     let isArenaMember = false;
     if (battle.arenaId) {
+      // Récupérer l'arène pour vérifier ownership
+      const arena = await prisma.arena.findUnique({
+        where: { id: battle.arenaId }
+      });
+
+      // Owner de l'arène ?
+      const isArenaOwner = arena && arena.userId === userId;
+
+      // Collaborateur de l'arène ?
       const arenaCollaboration = await prisma.arenaCollaboration.findUnique({
         where: {
           arenaId_userId: {
@@ -128,7 +137,8 @@ export const getBattle = async (req, res, next) => {
           }
         }
       });
-      isArenaMember = !!arenaCollaboration;
+
+      isArenaMember = isArenaOwner || !!arenaCollaboration;
     }
 
     if (!isOwner && !collaboration && !isArenaMember) {
@@ -209,10 +219,20 @@ export const updateBattle = async (req, res, next) => {
 
     let isArenaMember = false;
     if (existingBattle.arenaId) {
+      // Récupérer l'arène pour vérifier ownership
+      const arena = await prisma.arena.findUnique({
+        where: { id: existingBattle.arenaId }
+      });
+
+      // Owner de l'arène ?
+      const isArenaOwner = arena && arena.userId === userId;
+
+      // Collaborateur de l'arène ?
       const arenaCollab = await prisma.arenaCollaboration.findUnique({
         where: { arenaId_userId: { arenaId: existingBattle.arenaId, userId } }
       });
-      isArenaMember = !!arenaCollab;
+
+      isArenaMember = isArenaOwner || !!arenaCollab;
     }
 
     const isEditor = (collaboration && (collaboration.role === 'editor' || collaboration.role === 'owner')) || isArenaMember;
