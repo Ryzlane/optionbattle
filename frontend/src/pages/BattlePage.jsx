@@ -162,17 +162,18 @@ export default function BattlePage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-6">
         {/* Header */}
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-4">
           {/* Back button and status */}
           <div className="flex items-center justify-between">
             <Link
               to={battle?.arenaId ? `/arenas/${battle.arenaId}` : '/arena'}
-              className="inline-flex items-center space-x-1 text-sm text-muted-foreground hover:text-battle-primary"
+              className="inline-flex items-center space-x-1 text-xs sm:text-sm text-muted-foreground hover:text-battle-primary"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Retour à l'arène</span>
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Retour à l'arène</span>
+              <span className="xs:hidden">Retour</span>
             </Link>
 
             {/* Online indicator */}
@@ -180,21 +181,21 @@ export default function BattlePage() {
           </div>
 
           {/* Title and description */}
-          <div className="space-y-3">
+          <div className="space-y-1 sm:space-y-3">
             <Input
               value={battle?.title || ''}
               onChange={handleTitleChange}
               placeholder="Titre de la battle"
-              className="text-xl sm:text-2xl font-bold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="text-lg sm:text-xl md:text-2xl font-bold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               maxLength={200}
             />
 
             <textarea
               value={battle?.description || ''}
               onChange={handleDescriptionChange}
-              placeholder="Description de la battle (optionnel)"
-              className="w-full text-sm sm:text-base text-muted-foreground border-0 px-0 py-0 focus:outline-none focus:ring-0 resize-none"
-              rows={2}
+              placeholder="Description (optionnel)"
+              className="w-full text-xs sm:text-sm md:text-base text-muted-foreground border-0 px-0 py-0 focus:outline-none focus:ring-0 resize-none"
+              rows={1}
               maxLength={1000}
             />
           </div>
@@ -252,20 +253,20 @@ export default function BattlePage() {
 
         {/* Champion Banner */}
         {championFighter && (
-          <div className="bg-gradient-to-r from-battle-combat/10 to-battle-combat/5 border border-battle-combat/20 rounded-lg p-6 animate-bounce-in">
+          <div className="bg-gradient-to-r from-battle-combat/10 to-battle-combat/5 border border-battle-combat/20 rounded-lg p-3 sm:p-6 animate-bounce-in">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-battle-combat rounded-full">
-                  <Trophy className="w-6 h-6 text-white" />
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="flex items-center justify-center w-8 h-8 sm:w-12 sm:h-12 bg-battle-combat rounded-full">
+                  <Trophy className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-battle-combat">Champion actuel</p>
-                  <p className="text-xl font-bold text-slate-900">{championFighter.name}</p>
+                  <p className="text-xs sm:text-sm font-medium text-battle-combat">Champion actuel</p>
+                  <p className="text-base sm:text-xl font-bold text-slate-900 truncate max-w-[120px] sm:max-w-none">{championFighter.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">Combat Score</p>
-                <p className="text-3xl font-bold text-battle-combat">
+                <p className="text-xs sm:text-sm text-muted-foreground hidden xs:block">Combat Score</p>
+                <p className="text-2xl sm:text-3xl font-bold text-battle-combat">
                   {championFighter.score > 0 ? '+' : ''}{championFighter.score}
                 </p>
               </div>
@@ -275,7 +276,7 @@ export default function BattlePage() {
 
         {/* Actions */}
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900">
+          <h2 className="text-base sm:text-xl font-semibold text-slate-900">
             Fighters ({fighters.length})
           </h2>
           <AddFighterDialog battleId={id} onFighterAdded={(newFighter) => {
