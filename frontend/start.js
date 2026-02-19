@@ -7,7 +7,9 @@ const port = process.env.PORT || '4173';
 console.log(`🚀 Starting production server on port ${port}...`);
 
 // Use 'serve' for production static file serving
-const child = spawn('serve', ['-s', 'dist', '-l', port], {
+// -s = single page app mode (rewrites all not-found requests to index.html)
+// -p = port number
+const child = spawn('serve', ['-s', 'dist', '-p', port], {
   stdio: 'inherit',
   shell: true
 });
