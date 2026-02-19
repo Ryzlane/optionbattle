@@ -97,32 +97,34 @@ export default function ArenaPage() {
     <Layout>
       <div className="space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="w-12 h-12 bg-battle-primary rounded-lg flex items-center justify-center">
-                <Users className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">{arena.title}</h1>
-                {arena.description && (
-                  <p className="text-muted-foreground mt-1">{arena.description}</p>
-                )}
-              </div>
+        <div className="space-y-4">
+          {/* Title and description */}
+          <div className="flex items-start space-x-3">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-battle-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground ml-15">
-              <div className="flex items-center space-x-1">
-                <Swords className="w-4 h-4" />
-                <span>{stats.total} battle{stats.total > 1 ? 's' : ''}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Users className="w-4 h-4" />
-                <span>{(arena._count?.collaborations || 0) + 1} membre{(arena._count?.collaborations || 0) + 1 > 1 ? 's' : ''}</span>
-              </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 break-words">{arena.title}</h1>
+              {arena.description && (
+                <p className="text-sm sm:text-base text-muted-foreground mt-1">{arena.description}</p>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          {/* Stats */}
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+            <div className="flex items-center space-x-1">
+              <Swords className="w-4 h-4" />
+              <span>{stats.total} battle{stats.total > 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Users className="w-4 h-4" />
+              <span>{(arena._count?.collaborations || 0) + 1} membre{(arena._count?.collaborations || 0) + 1 > 1 ? 's' : ''}</span>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2">
             <CreateBattleDialog arenaId={id} onBattleCreated={handleBattleCreated} />
             <ArenaShareDialog arenaId={id} isOwner={arena.role === 'owner'} />
             {arena.role !== 'owner' && (
@@ -132,7 +134,8 @@ export default function ArenaPage() {
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Quitter
+                <span className="hidden sm:inline">Quitter</span>
+                <span className="sm:hidden">Quitter</span>
               </Button>
             )}
           </div>
