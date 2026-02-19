@@ -39,9 +39,6 @@ model User {
   arenaActivities                 ArenaActivity[]
   arenaInvitationsSent            ArenaInvitation[] @relation("ArenaInvitationsSent")
 
-  // Feedback
-  feedbacks Feedback[]
-
   @@map("users")
 }
 
@@ -303,25 +300,4 @@ model ArenaInvitation {
   @@index([email])
   @@index([status])
   @@map("arena_invitations")
-}
-
-// Feedback model - Système de feedback utilisateur
-model Feedback {
-  id          String   @id @default(uuid())
-  userId      String?  // Optionnel si feedback anonyme
-  email       String?  // Email de l'utilisateur
-  message     String?  // Message de feedback (optionnel)
-  screenshot  String?  // URL de la capture d'écran (optionnel)
-  pageUrl     String   // URL de la page où le feedback a été soumis
-  userAgent   String?  // User agent pour debugging
-  status      String   @default("pending") // pending, reviewed, resolved
-  createdAt   DateTime @default(now())
-
-  // Relations
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("feedbacks")
 }

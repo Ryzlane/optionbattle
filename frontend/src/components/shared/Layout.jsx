@@ -5,7 +5,6 @@ import { useSound } from '../../contexts/SoundContext';
 import { useArena } from '../../contexts/ArenaContext';
 import { Button } from '../ui/Button';
 import Sidebar from './Sidebar';
-import FloatingFeedbackButton from '../feedback/FloatingFeedbackButton';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -125,9 +124,6 @@ export default function Layout({ children }) {
           {children}
         </main>
       </div>
-
-      {/* Floating Feedback Button */}
-      <FloatingFeedbackButton />
     </div>
   );
 }
