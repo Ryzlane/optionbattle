@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Users, Settings, Swords, Trophy, LogOut } from 'lucide-react';
 import { useArena } from '../contexts/ArenaContext';
@@ -14,33 +15,41 @@ import { Button } from '../components/ui/Button';
 export default function ArenaPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { selectedArena, setSelectedArena, removeArena } = useArena();
-  const [arena, setArena] = useState(null);
-  const [battles, setBattles] = useState([]);
-  const [loading, setLoading] = useState(true);
 
+  // Charger l'arène avec React Query (cache automatique)
+  const { data: arena, isLoading, error } = useQuery({
+    queryKey: ['arena', id],
+    queryFn: async () => {
+      const response = await api.get(`/arenas/${id}`);
+      return response.data.data.arena;
+    },
+  });
+
+  // Synchroniser selectedArena avec le contexte
   useEffect(() => {
-    const fetchArena = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get(`/arenas/${id}`);
-        const arenaData = response.data.data.arena;
-        setArena(arenaData);
-        setSelectedArena(arenaData);
-        setBattles(arenaData.battles || []);
-      } catch (error) {
-        console.error('Erreur chargement arène:', error);
-        toast.error('Erreur lors du chargement de l\'arène');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (arena) {
+      setSelectedArena(arena);
+    }
+  }, [arena, setSelectedArena]);
 
-    fetchArena();
-  }, [id, setSelectedArena]);
+  // Gérer les erreurs
+  useEffect(() => {
+    if (error) {
+      console.error('Erreur chargement arène:', error);
+      toast.error('Erreur lors du chargement de l\'arène');
+    }
+  }, [error]);
+
+  // Extraire les battles de l'arène
+  const battles = useMemo(() => arena?.battles || [], [arena]);
 
   const handleBattleCreated = (newBattle) => {
-    setBattles((prev) => [newBattle, ...prev]);
+    // Mettre à jour le cache React Query
+    queryClient.setQueryData(['arena', id], (old) =>
+      old ? { ...old, battles: [newBattle, ...(old.battles || [])] } : old
+    );
   };
 
   const handleLeaveArena = async () => {
@@ -57,7 +66,7 @@ export default function ArenaPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center py-12">

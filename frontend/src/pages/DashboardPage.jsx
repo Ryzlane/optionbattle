@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tantml:parameter>react-query';
 import { toast } from 'sonner';
 import { Swords, Filter, TrendingUp, Trophy, Zap } from 'lucide-react';
 import api from '../services/api';
@@ -10,37 +11,28 @@ import { Button } from '../components/ui/Button';
 import { cn } from '../utils/cn';
 
 export default function DashboardPage() {
-  const [battles, setBattles] = useState([]);
-  const [allBattles, setAllBattles] = useState([]); // Pour les stats globales
-  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const fetchBattles = async () => {
-    setLoading(true);
-    try {
-      // Récupérer toutes les battles pour les stats
-      const allResponse = await api.get('/battles');
-      // Filtrer uniquement les battles personnelles (sans arenaId)
-      const personalBattles = allResponse.data.data.battles.filter(b => !b.arenaId);
-      setAllBattles(personalBattles);
+  // Charger toutes les battles avec React Query (1 seul appel API)
+  const { data: allBattles = [], isLoading, refetch } = useQuery({
+    queryKey: ['battles'],
+    queryFn: async () => {
+      const response = await api.get('/battles');
+      return response.data.data.battles;
+    },
+  });
 
-      // Récupérer les battles filtrées pour l'affichage
-      const url = filterStatus === 'all' ? '/battles' : `/battles?status=${filterStatus}`;
-      const response = await api.get(url);
-      // Filtrer uniquement les battles personnelles (sans arenaId)
-      const filteredPersonalBattles = response.data.data.battles.filter(b => !b.arenaId);
-      setBattles(filteredPersonalBattles);
-    } catch (error) {
-      console.error('Erreur chargement battles:', error);
-      toast.error('Erreur lors du chargement des battles');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filtrer côté client : battles personnelles (sans arenaId)
+  const personalBattles = useMemo(() =>
+    allBattles.filter(b => !b.arenaId),
+    [allBattles]
+  );
 
-  useEffect(() => {
-    fetchBattles();
-  }, [filterStatus]);
+  // Filtrer par status
+  const battles = useMemo(() => {
+    if (filterStatus === 'all') return personalBattles;
+    return personalBattles.filter(b => b.status === filterStatus);
+  }, [personalBattles, filterStatus]);
 
   const filters = [
     { value: 'all', label: 'Toutes', icon: Zap },
@@ -48,12 +40,12 @@ export default function DashboardPage() {
     { value: 'completed', label: 'Terminées', icon: Trophy },
   ];
 
-  // Calculer les stats sur TOUTES les battles, pas seulement les filtrées
-  const stats = {
-    total: allBattles.length,
-    active: allBattles.filter(b => b.status === 'active').length,
-    completed: allBattles.filter(b => b.status === 'completed').length,
-  };
+  // Calculer les stats sur les battles personnelles
+  const stats = useMemo(() => ({
+    total: personalBattles.length,
+    active: personalBattles.filter(b => b.status === 'active').length,
+    completed: personalBattles.filter(b => b.status === 'completed').length,
+  }), [personalBattles]);
 
   return (
     <Layout>
@@ -72,8 +64,8 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <QuickBattleDialog onBattleCreated={fetchBattles} />
-            <CreateBattleDialog onBattleCreated={fetchBattles} />
+            <QuickBattleDialog onBattleCreated={refetch} />
+            <CreateBattleDialog onBattleCreated={refetch} />
           </div>
         </div>
 
@@ -136,7 +128,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Battles Grid */}
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin h-12 w-12 border-4 border-battle-primary border-t-transparent rounded-full"></div>
           </div>
@@ -152,8 +144,8 @@ export default function DashboardPage() {
               Lancez votre première battle et laissez vos options combattre !
             </p>
             <div className="flex items-center justify-center space-x-3">
-              <QuickBattleDialog onBattleCreated={fetchBattles} />
-              <CreateBattleDialog onBattleCreated={fetchBattles} />
+              <QuickBattleDialog onBattleCreated={refetch} />
+              <CreateBattleDialog onBattleCreated={refetch} />
             </div>
           </div>
         ) : (

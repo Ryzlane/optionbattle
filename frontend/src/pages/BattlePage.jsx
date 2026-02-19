@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowLeft, Trash2, Save, Trophy, Loader2, CheckCircle, LogOut } from 'lucide-react';
 import debounce from 'lodash.debounce';
@@ -12,7 +13,7 @@ import CollaboratorsList from '../components/collaboration/CollaboratorsList';
 import OnlineIndicator from '../components/collaboration/OnlineIndicator';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { useRealtimeBattle } from '../hooks/useRealtimeBattle';
+import { useRealtimeBattleSync } from '../hooks/useRealtimeBattleSync';
 import { useCollaboration } from '../contexts/CollaborationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSound } from '../contexts/SoundContext';
@@ -21,35 +22,33 @@ import { cn } from '../utils/cn';
 export default function BattlePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { playVictory, playDelete } = useSound();
   const { isConnected, onlineUsers, emit } = useCollaboration();
-  const [initialBattle, setInitialBattle] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [hasPlayedVictory, setHasPlayedVictory] = useState(false);
 
-  // Utiliser le hook de synchronisation temps réel
-  const { battle, setBattle } = useRealtimeBattle(id, initialBattle);
+  // Charger la battle avec React Query (cache automatique)
+  const { data: battle, isLoading, error } = useQuery({
+    queryKey: ['battle', id],
+    queryFn: async () => {
+      const response = await api.get(`/battles/${id}`);
+      return response.data.data.battle;
+    },
+  });
 
-  // Charger la battle initiale
+  // Synchroniser avec WebSocket (met à jour le cache React Query)
+  useRealtimeBattleSync(id);
+
+  // Gérer les erreurs de chargement
   useEffect(() => {
-    const fetchBattle = async () => {
-      try {
-        const response = await api.get(`/battles/${id}`);
-        const battleData = response.data.data.battle;
-        setInitialBattle(battleData);
-      } catch (error) {
-        console.error('Erreur chargement battle:', error);
-        toast.error('Battle non trouvée');
-        navigate('/arena');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBattle();
-  }, [id]);
+    if (error) {
+      console.error('Erreur chargement battle:', error);
+      toast.error('Battle non trouvée');
+      navigate('/arena');
+    }
+  }, [error, navigate]);
 
   // Play victory sound when champion appears
   useEffect(() => {
@@ -70,8 +69,10 @@ export default function BattlePage() {
 
   const handleTitleChange = (e) => {
     const newTitle = e.target.value;
-    // Optimistic update
-    setBattle(prev => prev ? { ...prev, title: newTitle } : null);
+    // Optimistic update du cache React Query
+    queryClient.setQueryData(['battle', id], (old) =>
+      old ? { ...old, title: newTitle } : old
+    );
     // Émettre via socket (debounced)
     debouncedEmit('battle:update', {
       battleId: id,
@@ -81,8 +82,10 @@ export default function BattlePage() {
 
   const handleDescriptionChange = (e) => {
     const newDescription = e.target.value;
-    // Optimistic update
-    setBattle(prev => prev ? { ...prev, description: newDescription } : null);
+    // Optimistic update du cache React Query
+    queryClient.setQueryData(['battle', id], (old) =>
+      old ? { ...old, description: newDescription } : old
+    );
     // Émettre via socket (debounced)
     debouncedEmit('battle:update', {
       battleId: id,
@@ -140,7 +143,7 @@ export default function BattlePage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center py-12">
@@ -267,7 +270,9 @@ export default function BattlePage() {
             Fighters ({fighters.length})
           </h2>
           <AddFighterDialog battleId={id} onFighterAdded={(newFighter) => {
-              setBattle(prev => ({ ...prev, fighters: [...(prev.fighters || []), newFighter] }));
+              queryClient.setQueryData(['battle', id], (old) =>
+                old ? { ...old, fighters: [...(old.fighters || []), newFighter] } : old
+              );
             }} />
         </div>
 
@@ -278,7 +283,9 @@ export default function BattlePage() {
               Aucun fighter dans l'arène. Ajoutez votre premier fighter pour commencer la battle !
             </p>
             <AddFighterDialog battleId={id} onFighterAdded={(newFighter) => {
-                setBattle(prev => ({ ...prev, fighters: [...(prev.fighters || []), newFighter] }));
+                queryClient.setQueryData(['battle', id], (old) =>
+                  old ? { ...old, fighters: [...(old.fighters || []), newFighter] } : old
+                );
               }} />
           </div>
         ) : (
@@ -293,10 +300,12 @@ export default function BattlePage() {
                   isChampion={fighter.id === battle.championId}
                   onFighterUpdated={(updatedFighter) => {
                     if (updatedFighter) {
-                      setBattle(prev => ({
-                        ...prev,
-                        fighters: prev.fighters.map(f => f.id === updatedFighter.id ? updatedFighter : f)
-                      }));
+                      queryClient.setQueryData(['battle', id], (old) =>
+                        old ? {
+                          ...old,
+                          fighters: old.fighters.map(f => f.id === updatedFighter.id ? updatedFighter : f)
+                        } : old
+                      );
                     }
                   }}
                 />
