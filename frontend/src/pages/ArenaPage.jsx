@@ -8,7 +8,7 @@ import api from '../services/api';
 import Layout from '../components/shared/Layout';
 import BattleCard from '../components/arena/BattleCard';
 import CreateBattleDialog from '../components/arena/CreateBattleDialog';
-import ArenaSettingsDialog from '../components/arena/ArenaSettingsDialog';
+import ArenaShareDialog from '../components/arena/ArenaShareDialog';
 import ArenaCollaboratorsList from '../components/arena/ArenaCollaboratorsList';
 import { Button } from '../components/ui/Button';
 
@@ -123,18 +123,16 @@ export default function ArenaPage() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <ArenaCollaboratorsList arenaId={id} />
             <CreateBattleDialog arenaId={id} onBattleCreated={handleBattleCreated} />
-            {arena.role === 'owner' ? (
-              <ArenaSettingsDialog arenaId={id} arena={arena} />
-            ) : (
+            <ArenaShareDialog arenaId={id} isOwner={arena.role === 'owner'} />
+            {arena.role !== 'owner' && (
               <Button
                 variant="outline"
                 onClick={handleLeaveArena}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Quitter l'arène
+                Quitter
               </Button>
             )}
           </div>
