@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tantml:parameter>react-query';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Swords, Filter, TrendingUp, Trophy, Zap } from 'lucide-react';
 import api from '../services/api';
