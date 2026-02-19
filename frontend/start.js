@@ -14,9 +14,12 @@ console.log('📦 dist exists:', existsSync(join(__dirname, 'dist')));
 console.log('📄 index.html exists:', existsSync(join(__dirname, 'dist', 'index.html')));
 
 const app = express();
-const port = process.env.PORT || 3000;
+// Force port 3000 to match Railway domain configuration
+// Railway injects PORT=4173 but domain is configured for 3000
+const port = 3000;
 
-console.log('🌍 All environment variables:', Object.keys(process.env).filter(k => k.includes('PORT')));
+console.log('🌍 Railway injected PORT:', process.env.PORT);
+console.log('🎯 Using forced port:', port);
 
 // Servir les fichiers statiques du dossier dist
 app.use(express.static(join(__dirname, 'dist')));
@@ -29,5 +32,5 @@ app.use((req, res) => {
 // Écouter sur 0.0.0.0 (toutes les interfaces) pour Railway
 app.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Server listening on http://0.0.0.0:${port}`);
-  console.log(`📍 Railway PORT: ${process.env.PORT || 'not set (using 4173)'}`);
+  console.log(`✅ Server ready! Visit optionbattle.ryzlane.com`);
 });
