@@ -13,7 +13,6 @@ import templateRoutes from './routes/template.routes.js';
 import collaborationRoutes from './routes/collaboration.routes.js';
 import arenaRoutes from './routes/arena.routes.js';
 import arenaCollaborationRoutes from './routes/arenaCollaboration.routes.js';
-import feedbackRoutes from './routes/feedback.routes.js';
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -108,9 +107,6 @@ app.use('/api/arenas', arenaRoutes);
 
 // Arena collaboration routes (protégées sauf join/:token)
 app.use('/api/arena-collaboration', arenaCollaborationRoutes);
-
-// Feedback routes
-app.use('/api/feedback', feedbackRoutes);
 
 // Route 404
 app.use('*', (req, res) => {
