@@ -38,6 +38,7 @@ model User {
   arenaShareLinks                 ArenaShareLink[]
   arenaActivities                 ArenaActivity[]
   arenaInvitationsSent            ArenaInvitation[] @relation("ArenaInvitationsSent")
+  feedbacks                        Feedback[]
 
   @@map("users")
 }
@@ -300,4 +301,24 @@ model ArenaInvitation {
   @@index([email])
   @@index([status])
   @@map("arena_invitations")
+}
+
+// Feedback model - User feedback with optional screenshot
+model Feedback {
+  id          String   @id @default(uuid())
+  userId      String?
+  email       String?
+  message     String?  @db.Text
+  screenshot  String?  @db.Text
+  pageUrl     String
+  userAgent   String?
+  status      String   @default("pending") // pending, reviewed, resolved
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@map("feedbacks")
 }

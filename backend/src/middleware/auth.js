@@ -52,3 +52,41 @@ export const protect = async (req, res, next) => {
     });
   }
 };
+
+/**
+ * Middleware d'authentification optionnelle
+ * Attache l'utilisateur à req.user s'il est connecté, sinon req.user = null
+ */
+export const optionalAuth = async (req, res, next) => {
+  try {
+    // Récupérer le token depuis le header Authorization
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      req.user = null;
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    // Vérifier le token
+    const decoded = verifyToken(token);
+
+    // Récupérer l'utilisateur
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true
+      }
+    });
+
+    req.user = user || null;
+    next();
+  } catch (error) {
+    req.user = null;
+    next();
+  }
+};
