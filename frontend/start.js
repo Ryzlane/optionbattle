@@ -3,9 +3,15 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+console.log('🔧 Starting server...');
+console.log('📁 __dirname:', __dirname);
+console.log('📦 dist exists:', existsSync(join(__dirname, 'dist')));
+console.log('📄 index.html exists:', existsSync(join(__dirname, 'dist', 'index.html')));
 
 const app = express();
 const port = process.env.PORT || 4173;
