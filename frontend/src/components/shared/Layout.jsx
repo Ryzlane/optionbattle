@@ -1,14 +1,17 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Swords, LogOut, Trophy, Zap, Volume2, VolumeX } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Swords, LogOut, Trophy, Zap, Volume2, VolumeX, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSound } from '../../contexts/SoundContext';
+import { useArena } from '../../contexts/ArenaContext';
 import { Button } from '../ui/Button';
 import Sidebar from './Sidebar';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const { soundEnabled, toggleSound } = useSound();
+  const { arenas, selectedArena, setSelectedArena } = useArena();
   const location = useLocation();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -21,11 +24,37 @@ export default function Layout({ children }) {
               <div className="flex items-center justify-center w-10 h-10 bg-battle-primary rounded-lg group-hover:scale-110 transition-transform">
                 <Swords className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-battle-primary">OptionBattle</h1>
                 <p className="text-xs text-muted-foreground -mt-1">Let them fight it out</p>
               </div>
             </Link>
+
+            {/* Mobile Arena Selector */}
+            <div className="flex-1 md:hidden px-4">
+              <select
+                value={selectedArena?.id || 'personal'}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === 'personal') {
+                    setSelectedArena(null);
+                    navigate('/arena');
+                  } else {
+                    const arena = arenas.find(a => a.id === value);
+                    setSelectedArena(arena);
+                    navigate(`/arenas/${value}`);
+                  }
+                }}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-battle-primary"
+              >
+                <option value="personal">🗡️ Arena Perso</option>
+                {arenas.map((arena) => (
+                  <option key={arena.id} value={arena.id}>
+                    👥 {arena.title}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
