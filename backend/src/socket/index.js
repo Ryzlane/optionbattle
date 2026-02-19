@@ -484,6 +484,17 @@ async function checkBattleAccess(userId, battleId, requiredRole = null) {
 
   // Vérifier si membre de l'arène contenant cette battle
   if (battle.arenaId) {
+    // Récupérer l'arène pour vérifier ownership
+    const arena = await prisma.arena.findUnique({
+      where: { id: battle.arenaId }
+    });
+
+    // Owner de l'arène ?
+    if (arena && arena.userId === userId) {
+      return { role: 'owner', arena };
+    }
+
+    // Collaborateur de l'arène ?
     const arenaCollab = await prisma.arenaCollaboration.findUnique({
       where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
     });
