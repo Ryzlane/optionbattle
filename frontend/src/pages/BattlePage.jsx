@@ -164,11 +164,12 @@ export default function BattlePage() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="space-y-4">
+          {/* Back button and status */}
+          <div className="flex items-center justify-between">
             <Link
               to={battle?.arenaId ? `/arenas/${battle.arenaId}` : '/arena'}
-              className="inline-flex items-center space-x-1 text-sm text-muted-foreground hover:text-battle-primary mb-4"
+              className="inline-flex items-center space-x-1 text-sm text-muted-foreground hover:text-battle-primary"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Retour à l'arène</span>
@@ -176,66 +177,74 @@ export default function BattlePage() {
 
             {/* Online indicator */}
             <OnlineIndicator isConnected={isConnected} onlineUsers={onlineUsers} />
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Input
-                  value={battle?.title || ''}
-                  onChange={handleTitleChange}
-                  placeholder="Titre de la battle"
-                  className="text-2xl font-bold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  maxLength={200}
-                />
-              </div>
-
-              <textarea
-                value={battle?.description || ''}
-                onChange={handleDescriptionChange}
-                placeholder="Description de la battle (optionnel)"
-                className="w-full text-muted-foreground border-0 px-0 py-0 focus:outline-none focus:ring-0 resize-none"
-                rows={2}
-                maxLength={1000}
-              />
-            </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            {/* Boutons collaboration */}
+          {/* Title and description */}
+          <div className="space-y-3">
+            <Input
+              value={battle?.title || ''}
+              onChange={handleTitleChange}
+              placeholder="Titre de la battle"
+              className="text-xl sm:text-2xl font-bold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              maxLength={200}
+            />
+
+            <textarea
+              value={battle?.description || ''}
+              onChange={handleDescriptionChange}
+              placeholder="Description de la battle (optionnel)"
+              className="w-full text-sm sm:text-base text-muted-foreground border-0 px-0 py-0 focus:outline-none focus:ring-0 resize-none"
+              rows={2}
+              maxLength={1000}
+            />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-2">
             <ShareDialog battleId={id} />
             <CollaboratorsList battleId={id} />
+
+            {battle.status === 'completed' && (
+              <div className="px-3 py-1.5 bg-battle-secondary/10 text-battle-secondary rounded-md text-sm font-medium">
+                <Trophy className="w-4 h-4 inline mr-1" />
+                Battle terminée
+              </div>
+            )}
+
             {battle.status === 'active' && (
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleCompleteBattle}
                 className="border-battle-secondary text-battle-secondary hover:bg-battle-secondary hover:text-white"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Terminer la battle
+                <span className="hidden sm:inline">Terminer la battle</span>
+                <span className="sm:hidden">Terminer</span>
               </Button>
             )}
-            {battle.status === 'completed' && (
-              <div className="px-4 py-2 bg-battle-secondary/10 text-battle-secondary rounded-md text-sm font-medium">
-                🏆 Battle terminée
-              </div>
-            )}
+
             {battle.userId !== user?.id && (
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleLeaveBattle}
-                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Quitter
               </Button>
             )}
+
             {battle.userId === user?.id && (
               <Button
                 variant="destructive"
-                size="icon"
+                size="sm"
                 onClick={handleDelete}
                 disabled={deleting}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Supprimer</span>
               </Button>
             )}
           </div>
