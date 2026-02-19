@@ -9,14 +9,13 @@ console.log(`📍 Railway PORT env: ${process.env.PORT || 'not set (using defaul
 
 // Use 'serve' for production static file serving
 // -s = single page app mode (rewrites all not-found requests to index.html)
-// serve reads PORT environment variable automatically and listens on 0.0.0.0
-const child = spawn('serve', ['-s', 'dist'], {
+// --listen with tcp:// format to bind to 0.0.0.0 (all interfaces, required for Railway)
+const listenAddress = `tcp://0.0.0.0:${port}`;
+console.log(`🌐 Listen address: ${listenAddress}`);
+
+const child = spawn('serve', ['-s', 'dist', '--listen', listenAddress], {
   stdio: 'inherit',
-  shell: true,
-  env: {
-    ...process.env,
-    PORT: port // Explicitly pass PORT to serve
-  }
+  shell: true
 });
 
 child.on('error', (error) => {
