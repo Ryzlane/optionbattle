@@ -14,7 +14,9 @@ console.log('📦 dist exists:', existsSync(join(__dirname, 'dist')));
 console.log('📄 index.html exists:', existsSync(join(__dirname, 'dist', 'index.html')));
 
 const app = express();
-const port = process.env.PORT || 4173;
+const port = process.env.PORT || 3000;
+
+console.log('🌍 All environment variables:', Object.keys(process.env).filter(k => k.includes('PORT')));
 
 // Servir les fichiers statiques du dossier dist
 app.use(express.static(join(__dirname, 'dist')));
