@@ -1,28 +1,25 @@
 #!/usr/bin/env node
 
-import { spawn } from 'child_process';
+import express from 'express';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const port = process.env.PORT || '4173';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-console.log(`🚀 Starting production server on port ${port}...`);
-console.log(`📍 Railway PORT env: ${process.env.PORT || 'not set (using default 4173)'}`);
+const app = express();
+const port = process.env.PORT || 4173;
 
-// Use 'serve' for production static file serving
-// -s = single page app mode (rewrites all not-found requests to index.html)
-// --listen with tcp:// format to bind to 0.0.0.0 (all interfaces, required for Railway)
-const listenAddress = `tcp://0.0.0.0:${port}`;
-console.log(`🌐 Listen address: ${listenAddress}`);
+// Servir les fichiers statiques du dossier dist
+app.use(express.static(join(__dirname, 'dist')));
 
-const child = spawn('serve', ['-s', 'dist', '--listen', listenAddress], {
-  stdio: 'inherit',
-  shell: true
+// SPA fallback - toutes les routes non-API renvoient index.html
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'index.html'));
 });
 
-child.on('error', (error) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
-
-child.on('exit', (code) => {
-  process.exit(code || 0);
+// Écouter sur 0.0.0.0 (toutes les interfaces) pour Railway
+app.listen(port, '0.0.0.0', () => {
+  console.log(`🚀 Server listening on http://0.0.0.0:${port}`);
+  console.log(`📍 Railway PORT: ${process.env.PORT || 'not set (using 4173)'}`);
 });
