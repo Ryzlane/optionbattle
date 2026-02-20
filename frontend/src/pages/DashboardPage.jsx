@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Swords, Filter, TrendingUp, Trophy, Zap } from 'lucide-react';
@@ -7,11 +7,22 @@ import Layout from '../components/shared/Layout';
 import CreateBattleDialog from '../components/arena/CreateBattleDialog';
 import QuickBattleDialog from '../components/templates/QuickBattleDialog';
 import BattleCard from '../components/arena/BattleCard';
+import OnboardingModal from '../components/onboarding/OnboardingModal';
 import { Button } from '../components/ui/Button';
 import { cn } from '../utils/cn';
 
 export default function DashboardPage() {
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Vérifier si l'utilisateur a déjà vu l'onboarding
+  useEffect(() => {
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+    if (!onboardingCompleted) {
+      // Afficher l'onboarding après un court délai pour une meilleure UX
+      setTimeout(() => setShowOnboarding(true), 500);
+    }
+  }, []);
 
   // Charger toutes les battles avec React Query (1 seul appel API)
   const { data: allBattles = [], isLoading, refetch } = useQuery({
@@ -156,6 +167,12 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        open={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+      />
     </Layout>
   );
 }
