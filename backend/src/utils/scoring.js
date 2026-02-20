@@ -76,12 +76,12 @@ export const calculateBattleScores = async (prisma, battleId) => {
 
   // Trouver et mettre à jour le champion
   const champion = findChampion(fightersWithScores);
-  if (champion) {
-    await prisma.battle.update({
-      where: { id: battleId },
-      data: { championId: champion.id }
-    });
-  }
+
+  // Mettre à jour le championId (peut être null en cas d'égalité)
+  await prisma.battle.update({
+    where: { id: battleId },
+    data: { championId: champion ? champion.id : null }
+  });
 
   return fightersWithScores;
 };
