@@ -10,6 +10,7 @@ import JoinBattlePage from './pages/JoinBattlePage';
 import ArenaPage from './pages/ArenaPage';
 import JoinArenaPage from './pages/JoinArenaPage';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
+import FeedbacksPage from './pages/FeedbacksPage';
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -129,6 +130,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ArenaPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/feedbacks"
+        element={
+          <ProtectedRoute>
+            <FeedbacksPage />
           </ProtectedRoute>
         }
       />
