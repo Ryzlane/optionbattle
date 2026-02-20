@@ -106,6 +106,9 @@ export default function CollaboratorsList({ battleId }) {
                       ) : (
                         <span>{collab.role === 'editor' ? 'Éditeur' : 'Lecteur'}</span>
                       )}
+                      {collab.fromArena && (
+                        <span className="ml-2 text-xs text-blue-600">• Membre de l'arène</span>
+                      )}
                     </p>
                   </div>
                 </div>

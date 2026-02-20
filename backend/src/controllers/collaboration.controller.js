@@ -37,7 +37,7 @@ export const getCollaborators = async (req, res, next) => {
       }
     });
 
-    // Récupérer les collaborateurs
+    // Récupérer les collaborateurs directs de la battle
     const collaborations = await prisma.collaboration.findMany({
       where: { battleId },
       include: {
@@ -63,8 +63,75 @@ export const getCollaborators = async (req, res, next) => {
       user: battle.user
     };
 
-    // Combiner propriétaire + collaborateurs
-    const allCollaborators = [ownerAsCollaborator, ...collaborations];
+    // Commencer avec propriétaire + collaborateurs directs
+    let allCollaborators = [ownerAsCollaborator, ...collaborations];
+
+    // Si la battle appartient à une arène, ajouter les membres de l'arène
+    if (battle.arenaId) {
+      // Récupérer l'arène et son owner
+      const arena = await prisma.arena.findUnique({
+        where: { id: battle.arenaId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              createdAt: true
+            }
+          }
+        }
+      });
+
+      // Récupérer les collaborateurs de l'arène
+      const arenaCollaborations = await prisma.arenaCollaboration.findMany({
+        where: { arenaId: battle.arenaId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              createdAt: true
+            }
+          }
+        },
+        orderBy: { joinedAt: 'asc' }
+      });
+
+      // Créer un Set avec les IDs des utilisateurs déjà présents
+      const existingUserIds = new Set(allCollaborators.map(c => c.user.id));
+
+      // Ajouter l'owner de l'arène s'il n'est pas déjà présent
+      if (arena && !existingUserIds.has(arena.userId)) {
+        allCollaborators.push({
+          id: `arena-owner-${arena.id}`,
+          battleId,
+          userId: arena.userId,
+          role: 'editor', // Les membres de l'arène ont le rôle editor par défaut
+          joinedAt: arena.createdAt,
+          user: arena.user,
+          fromArena: true
+        });
+        existingUserIds.add(arena.userId);
+      }
+
+      // Ajouter les collaborateurs de l'arène qui ne sont pas déjà présents
+      arenaCollaborations.forEach(arenaCollab => {
+        if (!existingUserIds.has(arenaCollab.userId)) {
+          allCollaborators.push({
+            id: `arena-collab-${arenaCollab.id}`,
+            battleId,
+            userId: arenaCollab.userId,
+            role: arenaCollab.role,
+            joinedAt: arenaCollab.joinedAt,
+            user: arenaCollab.user,
+            fromArena: true
+          });
+          existingUserIds.add(arenaCollab.userId);
+        }
+      });
+    }
 
     res.json({
       success: true,
