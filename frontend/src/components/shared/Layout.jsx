@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Swords, LogOut, Trophy, Zap, Volume2, VolumeX, Users } from 'lucide-react';
+import { Swords, LogOut, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSound } from '../../contexts/SoundContext';
 import { useArena } from '../../contexts/ArenaContext';
@@ -56,23 +56,6 @@ export default function Layout({ children }) {
                 ))}
               </select>
             </div>
-
-            {/* Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
-              <Link
-                to="/arena"
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname === '/arena'
-                    ? 'bg-battle-primary text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Zap className="w-4 h-4" />
-                  <span>Battle Arena</span>
-                </div>
-              </Link>
-            </nav>
 
             {/* User menu */}
             <div className="flex items-center space-x-4">
