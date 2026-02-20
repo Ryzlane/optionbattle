@@ -160,6 +160,11 @@ export default function BattlePage() {
   const fighters = battle.fighters || [];
   const championFighter = fighters.find(f => f.id === battle.championId);
 
+  // Détecter égalité : pas de champion mais plusieurs fighters au score max
+  const hasTie = !battle.championId && fighters.length > 1;
+  const maxScore = fighters.length > 0 ? Math.max(...fighters.map(f => f.score || 0)) : 0;
+  const tiedFighters = hasTie ? fighters.filter(f => (f.score || 0) === maxScore) : [];
+
   return (
     <Layout>
       <div className="space-y-3 sm:space-y-6">
@@ -268,6 +273,34 @@ export default function BattlePage() {
                 <p className="text-xs sm:text-sm text-muted-foreground hidden xs:block">Combat Score</p>
                 <p className="text-2xl sm:text-3xl font-bold text-battle-combat">
                   {championFighter.score > 0 ? '+' : ''}{championFighter.score}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tie Banner */}
+        {hasTie && tiedFighters.length > 1 && (
+          <div className="bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20 rounded-lg p-3 sm:p-6 animate-bounce-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="flex items-center justify-center w-8 h-8 sm:w-12 sm:h-12 bg-amber-500 rounded-full">
+                  <Trophy className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-medium text-amber-700">Égalité !</p>
+                  <p className="text-base sm:text-xl font-bold text-slate-900">
+                    {tiedFighters.length} fighters à égalité
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    {tiedFighters.map(f => f.name).join(', ')}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs sm:text-sm text-muted-foreground hidden xs:block">Combat Score</p>
+                <p className="text-2xl sm:text-3xl font-bold text-amber-600">
+                  {maxScore > 0 ? '+' : ''}{maxScore}
                 </p>
               </div>
             </div>

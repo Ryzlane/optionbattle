@@ -25,13 +25,24 @@ export const calculateFighterScore = (argumentsList) => {
 
 /**
  * Trouve le champion (fighter avec le meilleur score)
+ * Retourne null s'il y a égalité
  */
 export const findChampion = (fighters) => {
   if (!fighters || fighters.length === 0) return null;
 
-  return fighters.reduce((champion, fighter) => {
-    return (fighter.score || 0) > (champion.score || 0) ? fighter : champion;
-  });
+  // Trouver le score maximal
+  const maxScore = Math.max(...fighters.map(f => f.score || 0));
+
+  // Trouver tous les fighters avec ce score
+  const topFighters = fighters.filter(f => (f.score || 0) === maxScore);
+
+  // S'il y a égalité (plusieurs fighters au même score max), retourner null
+  if (topFighters.length > 1) {
+    return null;
+  }
+
+  // Sinon retourner le champion unique
+  return topFighters[0];
 };
 
 /**

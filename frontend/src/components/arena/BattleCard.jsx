@@ -39,6 +39,12 @@ export default function BattleCard({ battle }) {
     ? battle.fighters?.find(f => f.id === battle.championId)
     : null;
 
+  // Détecter égalité
+  const fighters = battle.fighters || [];
+  const hasTie = !hasChampion && fighters.length > 1;
+  const maxScore = fighters.length > 0 ? Math.max(...fighters.map(f => f.score || 0)) : 0;
+  const tiedFighters = hasTie ? fighters.filter(f => (f.score || 0) === maxScore) : [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -107,6 +113,24 @@ export default function BattleCard({ battle }) {
                 <div className="text-right">
                   <p className="text-lg font-bold text-battle-secondary">
                     {championFighter.score > 0 ? '+' : ''}{championFighter.score}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tie */}
+            {hasTie && tiedFighters.length > 1 && (
+              <div className="flex items-center space-x-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                <Trophy className="w-5 h-5 text-amber-600" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-amber-700">Égalité !</p>
+                  <p className="text-sm font-semibold text-slate-900 line-clamp-1">
+                    {tiedFighters.length} fighters à égalité
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-amber-600">
+                    {maxScore > 0 ? '+' : ''}{maxScore}
                   </p>
                 </div>
               </div>
