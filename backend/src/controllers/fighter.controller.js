@@ -128,10 +128,18 @@ export const createFighter = async (req, res, next) => {
 
     let isArenaMember = false;
     if (battle.arenaId) {
+      // Vérifier si owner de l'arène
+      const arena = await prisma.arena.findUnique({
+        where: { id: battle.arenaId }
+      });
+      const isArenaOwner = arena && arena.userId === userId;
+
+      // Vérifier si collaborateur de l'arène
       const arenaCollab = await prisma.arenaCollaboration.findUnique({
         where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
       });
-      isArenaMember = !!arenaCollab;
+
+      isArenaMember = isArenaOwner || (arenaCollab && arenaCollab.role === 'editor');
     }
 
     const isEditor = (collaboration && collaboration.role === 'editor') || isArenaMember;
@@ -204,10 +212,18 @@ export const updateFighter = async (req, res, next) => {
 
     let isArenaMember = false;
     if (battle.arenaId) {
+      // Vérifier si owner de l'arène
+      const arena = await prisma.arena.findUnique({
+        where: { id: battle.arenaId }
+      });
+      const isArenaOwner = arena && arena.userId === userId;
+
+      // Vérifier si collaborateur de l'arène
       const arenaCollab = await prisma.arenaCollaboration.findUnique({
         where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
       });
-      isArenaMember = !!arenaCollab;
+
+      isArenaMember = isArenaOwner || (arenaCollab && arenaCollab.role === 'editor');
     }
 
     const isEditor = (collaboration && collaboration.role === 'editor') || isArenaMember;
@@ -283,10 +299,18 @@ export const deleteFighter = async (req, res, next) => {
 
     let isArenaMember = false;
     if (battle.arenaId) {
+      // Vérifier si owner de l'arène
+      const arena = await prisma.arena.findUnique({
+        where: { id: battle.arenaId }
+      });
+      const isArenaOwner = arena && arena.userId === userId;
+
+      // Vérifier si collaborateur de l'arène
       const arenaCollab = await prisma.arenaCollaboration.findUnique({
         where: { arenaId_userId: { arenaId: battle.arenaId, userId } }
       });
-      isArenaMember = !!arenaCollab;
+
+      isArenaMember = isArenaOwner || (arenaCollab && arenaCollab.role === 'editor');
     }
 
     const isEditor = (collaboration && collaboration.role === 'editor') || isArenaMember;
