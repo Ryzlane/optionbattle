@@ -62,7 +62,7 @@ export default function OnboardingModal({ open, onClose }) {
   const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-2xl">
         {/* Skip button */}
         <button
