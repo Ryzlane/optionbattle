@@ -187,6 +187,29 @@ export const createArgument = async (req, res, next) => {
     // Recalculer les scores de la battle
     await calculateBattleScores(prisma, battleId);
 
+    // Récupérer la battle mise à jour pour WebSocket
+    const updatedBattle = await prisma.battle.findUnique({
+      where: { id: battleId },
+      include: {
+        fighters: {
+          include: {
+            arguments: true
+          }
+        }
+      }
+    });
+
+    // Émettre event WebSocket pour mise à jour temps réel
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`battle:${battleId}`).emit('argument:added', {
+        argument,
+        fighterId,
+        battle: updatedBattle,
+        addedBy: req.user
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: `${type === 'power' ? 'Attack Power' : 'Weakness'} ajouté avec succès`,
@@ -278,6 +301,28 @@ export const updateArgument = async (req, res, next) => {
     // Recalculer les scores de la battle
     await calculateBattleScores(prisma, battleId);
 
+    // Récupérer la battle mise à jour pour WebSocket
+    const updatedBattle = await prisma.battle.findUnique({
+      where: { id: battleId },
+      include: {
+        fighters: {
+          include: {
+            arguments: true
+          }
+        }
+      }
+    });
+
+    // Émettre event WebSocket pour mise à jour temps réel
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`battle:${battleId}`).emit('argument:updated', {
+        argument,
+        battle: updatedBattle,
+        updatedBy: req.user
+      });
+    }
+
     res.json({
       success: true,
       message: 'Argument mis à jour avec succès',
@@ -362,6 +407,28 @@ export const deleteArgument = async (req, res, next) => {
 
     // Recalculer les scores de la battle
     await calculateBattleScores(prisma, battleId);
+
+    // Récupérer la battle mise à jour pour WebSocket
+    const updatedBattle = await prisma.battle.findUnique({
+      where: { id: battleId },
+      include: {
+        fighters: {
+          include: {
+            arguments: true
+          }
+        }
+      }
+    });
+
+    // Émettre event WebSocket pour mise à jour temps réel
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`battle:${battleId}`).emit('argument:deleted', {
+        argumentId: id,
+        battle: updatedBattle,
+        deletedBy: req.user
+      });
+    }
 
     res.json({
       success: true,
