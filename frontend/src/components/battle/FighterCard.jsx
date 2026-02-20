@@ -112,13 +112,24 @@ export default function FighterCard({ battleId, fighter, isChampion, onFighterUp
               {combatScore > 0 ? '+' : ''}{combatScore}
             </span>
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex">
+            {/* Barre verte (powers) */}
             <div
-              className={cn(
-                'h-full transition-all duration-500',
-                combatScore > 0 ? 'bg-battle-secondary' : 'bg-battle-danger'
-              )}
-              style={{ width: `${Math.min(Math.abs(combatScore) * 10, 100)}%` }}
+              className="h-full bg-battle-secondary transition-all duration-500"
+              style={{
+                width: powerScore + weaknessScore > 0
+                  ? `${(powerScore / (powerScore + weaknessScore)) * 100}%`
+                  : '50%'
+              }}
+            />
+            {/* Barre rouge (weaknesses) */}
+            <div
+              className="h-full bg-battle-danger transition-all duration-500"
+              style={{
+                width: powerScore + weaknessScore > 0
+                  ? `${(weaknessScore / (powerScore + weaknessScore)) * 100}%`
+                  : '50%'
+              }}
             />
           </div>
           <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
