@@ -73,7 +73,7 @@ export default function FeedbacksPage() {
               size="sm"
               onClick={() => setSelectedStatus('pending')}
             >
-              Nouveau
+              À traiter
             </Button>
             <Button
               variant={selectedStatus === 'in_progress' ? 'default' : 'outline'}
@@ -87,14 +87,14 @@ export default function FeedbacksPage() {
               size="sm"
               onClick={() => setSelectedStatus('archived')}
             >
-              Archivé
+              Archivés
             </Button>
             <Button
               variant={selectedStatus === 'completed' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedStatus('completed')}
             >
-              Terminé
+              Terminés
             </Button>
           </div>
         </div>
@@ -157,10 +157,10 @@ export default function FeedbacksPage() {
                           : 'bg-green-50 text-green-700 border-green-200'
                       }`}
                     >
-                      <option value="pending">Nouveau</option>
+                      <option value="pending">À traiter</option>
                       <option value="in_progress">En cours</option>
-                      <option value="archived">Archivé</option>
-                      <option value="completed">Terminé</option>
+                      <option value="archived">Archivés</option>
+                      <option value="completed">Terminés</option>
                     </select>
                   </div>
                 </div>
