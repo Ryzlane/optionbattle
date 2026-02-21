@@ -95,15 +95,30 @@ export const getFeedbacks = async (req, res) => {
 };
 
 /**
- * Update feedback status (admin only - optional future feature)
+ * Update feedback status (admin only)
  * PATCH /api/feedback/:id
  */
 export const updateFeedbackStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+    const userId = req.user.id;
 
-    if (!['pending', 'reviewed', 'resolved'].includes(status)) {
+    // Vérifier que l'utilisateur est admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true }
+    });
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Seuls les administrateurs peuvent modifier le statut des feedbacks'
+      });
+    }
+
+    // Validation des statuts
+    if (!['pending', 'in_progress', 'archived', 'completed'].includes(status)) {
       return res.status(400).json({
         success: false,
         message: 'Statut invalide'

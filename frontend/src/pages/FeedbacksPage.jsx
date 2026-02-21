@@ -7,11 +7,15 @@ import api from '../services/api';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function FeedbacksPage() {
+  const { user } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const queryClient = useQueryClient();
+
+  const isAdmin = user?.role === 'admin';
 
   // Fetch feedbacks
   const { data: feedbacksData, isLoading } = useQuery({
@@ -34,8 +38,9 @@ export default function FeedbacksPage() {
       toast.success('Statut mis à jour');
       setSelectedFeedback(null);
     },
-    onError: () => {
-      toast.error('Erreur lors de la mise à jour');
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Erreur lors de la mise à jour';
+      toast.error(message);
     }
   });
 
@@ -68,21 +73,28 @@ export default function FeedbacksPage() {
               size="sm"
               onClick={() => setSelectedStatus('pending')}
             >
-              En attente
+              Nouveau
             </Button>
             <Button
-              variant={selectedStatus === 'reviewed' ? 'default' : 'outline'}
+              variant={selectedStatus === 'in_progress' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setSelectedStatus('reviewed')}
+              onClick={() => setSelectedStatus('in_progress')}
             >
-              Revus
+              En cours
             </Button>
             <Button
-              variant={selectedStatus === 'resolved' ? 'default' : 'outline'}
+              variant={selectedStatus === 'archived' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setSelectedStatus('resolved')}
+              onClick={() => setSelectedStatus('archived')}
             >
-              Résolus
+              Archivé
+            </Button>
+            <Button
+              variant={selectedStatus === 'completed' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedStatus('completed')}
+            >
+              Terminé
             </Button>
           </div>
         </div>
@@ -132,17 +144,23 @@ export default function FeedbacksPage() {
                     <select
                       value={feedback.status}
                       onChange={(e) => updateStatusMutation.mutate({ id: feedback.id, status: e.target.value })}
-                      className={`px-3 py-1 rounded-full text-sm font-medium border-2 ${
+                      disabled={!isAdmin}
+                      className={`px-3 py-1 rounded-full text-sm font-medium border-2 transition-opacity ${
+                        !isAdmin ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                      } ${
                         feedback.status === 'pending'
                           ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                          : feedback.status === 'reviewed'
+                          : feedback.status === 'in_progress'
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : feedback.status === 'archived'
+                          ? 'bg-slate-50 text-slate-700 border-slate-200'
                           : 'bg-green-50 text-green-700 border-green-200'
                       }`}
                     >
-                      <option value="pending">En attente</option>
-                      <option value="reviewed">Revu</option>
-                      <option value="resolved">Résolu</option>
+                      <option value="pending">Nouveau</option>
+                      <option value="in_progress">En cours</option>
+                      <option value="archived">Archivé</option>
+                      <option value="completed">Terminé</option>
                     </select>
                   </div>
                 </div>
